@@ -405,7 +405,7 @@ describe('lint', () => {
       status: 'draft',
       item: [
         { linkId: 'g', type: 'group' },
-        { linkId: 'd', type: 'display', required: true },
+        { linkId: 'd', type: 'display', required: true, item: [{ linkId: 'd1', type: 'display' }] },
         { linkId: 's', type: 'string', answerOption: [{ valueString: 'x' }] },
         { linkId: 'dup', type: 'string' },
         { linkId: 'dup', type: 'string' },
@@ -422,6 +422,11 @@ describe('lint', () => {
       ],
     };
     const codes = lintQuestionnaire(q).map((i) => i.code);
+    expect(
+      lintQuestionnaire(q)
+        .filter((i) => i.code === 'que-1')
+        .map((i) => i.linkId),
+    ).toEqual(['g', 'd']);
     for (const c of [
       'que-1',
       'que-6',

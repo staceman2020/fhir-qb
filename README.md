@@ -21,12 +21,13 @@ pnpm typecheck     # tsc -b (project references)
 pnpm lint          # ESLint, including the dependency policy
 pnpm build         # library builds (ESM + IIFE for the element)
 pnpm size          # bundle budgets
-pnpm --filter @qb/renderer dev   # demo page with a container-width simulator
+pnpm dev           # builder app
+pnpm --filter @qb/renderer dev   # renderer demo page with a container-width simulator
 pnpm ig:build      # SUSHI build of the IG
 ```
 
 ## Status
 
-Phase 0 (foundations) and most of Phase 1 (core engine and renderer MVP) are done. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
+Phases 0–2 are done: foundations, the core engine and renderer, and the builder MVP. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
 
 Licence: Apache-2.0 (open decision #7).

@@ -1,9 +1,20 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/extensions" },
-    { "path": "packages/core" },
-    { "path": "packages/test-fixtures" },
-    { "path": "packages/renderer" }
+    {
+      "path": "packages/extensions"
+    },
+    {
+      "path": "packages/core"
+    },
+    {
+      "path": "packages/test-fixtures"
+    },
+    {
+      "path": "packages/renderer"
+    },
+    {
+      "path": "apps/builder"
+    }
   ]
 }

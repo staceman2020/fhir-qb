@@ -13,6 +13,8 @@ export default defineConfig(({ mode }) => {
   if (mode === 'demo') {
     return {
       root: resolve(import.meta.dirname, 'demo'),
+      // Relative so the demo works under any sub-path (Netlify serves it at /renderer/demo/).
+      base: './',
       plugins: [react()],
       build: { outDir: resolve(import.meta.dirname, 'dist-demo'), emptyOutDir: true },
     };

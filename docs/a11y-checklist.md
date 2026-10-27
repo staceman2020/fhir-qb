@@ -18,6 +18,15 @@ Automated: axe-core in Vitest browser mode for every fixture × breakpoint (to b
 - [ ] `lang` is set on the form root from the element or `Questionnaire.language`.
 - [ ] Layout reflows at 320 CSS px and at 400% zoom (1.4.10): container queries collapse to a single column.
 
+## Builder (best-effort AA)
+
+- [ ] Skip link; focus moves to the main region on navigation.
+- [ ] The outline is a WAI-ARIA tree (arrows, Home/End, Left/Right collapse) with button equivalents for every keyboard action (2.1.1, 2.5.7).
+- [ ] Moves, deletes, undo and restore are announced in a polite live region.
+- [ ] Item settings use the WAI-ARIA tabs pattern; all fields have labels and hints linked by `aria-describedby`.
+- [ ] Autosave status is a `role="status"` region.
+- [ ] Light and dark themes meet contrast; forced-colors keeps the selection visible.
+
 ## Screen reader passes
 
 - [ ] NVDA + Firefox

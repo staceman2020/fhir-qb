@@ -72,6 +72,8 @@ export function lintQuestionnaire(
     const { linkId, type } = item;
     if (type === 'group' && !item.item?.length)
       add('error', 'que-1', linkId, 'A group must have child items.');
+    if (type === 'display' && item.item?.length)
+      add('error', 'que-1', linkId, 'Display items cannot have child items.');
     if (type === 'display' && (item.required !== undefined || item.repeats !== undefined))
       add('error', 'que-6', linkId, 'Display items cannot be required or repeat.');
     if (item.answerOption?.length && item.answerValueSet)

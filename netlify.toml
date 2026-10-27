@@ -1,17 +1,35 @@
-# Phase 0/1: publishes the renderer demo. The builder app (apps/builder) replaces this in Phase 2 (plan §9.5).
+# Builder app at /, renderer bundle at /renderer/v{major}/, demo at /renderer/demo/ (plan §9.5).
+# Deploy previews are enabled per pull request in the Netlify site settings.
 [build]
-  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @qb/renderer build:demo"
-  publish = "packages/renderer/dist-demo"
+  command = "corepack enable && pnpm install --frozen-lockfile && bash scripts/netlify-build.sh"
+  publish = "apps/builder/dist"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Existing files (including /renderer/*) are served first; everything else falls back to the SPA.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
 
 [[headers]]
   for = "/*"
   [headers.values]
-    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    # connect-src allows any https: origin because people configure their own terminology servers
+    # (plan §9.5). style-src needs 'unsafe-inline' for TipTap/ProseMirror inline styles.
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; font-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
     X-Content-Type-Options = "nosniff"
 
 [[headers]]
   for = "/assets/*"
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/renderer/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Cache-Control = "public, max-age=3600"

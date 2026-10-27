@@ -10,5 +10,11 @@
     "path": "packages/renderer/dist/qb-questionnaire.iife.js",
     "limit": "110 KB",
     "gzip": true
+  },
+  {
+    "name": "Builder initial route (JS, excl. lazy rich-text editor)",
+    "path": ["apps/builder/dist/assets/index-*.js"],
+    "limit": "400 KB",
+    "gzip": true
   }
 ]
