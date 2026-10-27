@@ -37,6 +37,7 @@
     "@qb/core": "workspace:*",
     "@qb/extensions": "workspace:*",
     "@types/fhir": "^0.0.44",
+    "fhirpath": "5.2.2",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   },

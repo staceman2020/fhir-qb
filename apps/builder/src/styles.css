@@ -572,3 +572,11 @@ pre.json {
     background: Highlight;
   }
 }
+
+/* Expression editor */
+textarea.code.expr {
+  min-height: 4.5rem;
+}
+.field.expression code {
+  overflow-wrap: anywhere;
+}

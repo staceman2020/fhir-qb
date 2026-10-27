@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRepo } from '../context.js';
 import { SETTINGS } from '../db/repository.js';
 import { TextField } from '../components/fields.js';
+import { TestConnection } from '../components/TestConnection.js';
 
 const fmtBytes = (n: number) =>
   n >= 1e9
@@ -66,6 +67,7 @@ export function SettingsPage() {
           </button>
           <p role="status">{saved}</p>
         </form>
+        <TestConnection server={server.trim().replace(/\/+$/, '')} />
       </section>
 
       <section aria-labelledby="storage-heading">
@@ -97,6 +99,19 @@ export function SettingsPage() {
         {persisted === false && (
           <p className="muted">The browser has not granted permanent storage yet.</p>
         )}
+        <h3>Terminology cache</h3>
+        <p>
+          Code lists fetched from terminology servers are kept for a week so forms open quickly.
+        </p>
+        <button
+          type="button"
+          onClick={async () => {
+            await repo.db.valueSetCache.clear();
+            setSaved('Terminology cache cleared.');
+          }}
+        >
+          Clear terminology cache
+        </button>
       </section>
     </div>
   );

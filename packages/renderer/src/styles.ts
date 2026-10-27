@@ -115,6 +115,21 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .qb-actions { margin-top: var(--qb-space-4); }
 .qb-file { display: flex; gap: var(--qb-space-2); align-items: center; flex-wrap: wrap; margin-top: var(--qb-space-2); }
 
+/* Autocomplete (WAI-ARIA combobox) */
+.qb-combobox { position: relative; }
+.qb-listbox {
+  list-style: none; margin: 2px 0 0; padding: var(--qb-space-1) 0; max-height: 16rem; overflow-y: auto;
+  background: var(--qb-color-bg); color: var(--qb-color-text); border: 2px solid var(--qb-color-border); border-radius: var(--qb-radius);
+  position: absolute; inset-inline: 0; top: 100%; z-index: 10;
+}
+.qb-listbox[popover] { position: fixed; inset: auto; margin: 0; }
+.qb-listbox li { padding: var(--qb-space-1) var(--qb-space-2); cursor: pointer; min-height: 1.75rem; }
+.qb-listbox li.qb-option-active { background: var(--qb-color-accent); color: var(--qb-color-accent-text); }
+.qb-chips { list-style: none; display: flex; flex-wrap: wrap; gap: var(--qb-space-1); margin: 0 0 var(--qb-space-2); padding: 0; }
+.qb-chip { display: inline-flex; align-items: center; gap: var(--qb-space-1); border: 1px solid var(--qb-color-border); border-radius: 999px; padding: 0 var(--qb-space-1) 0 var(--qb-space-2); }
+.qb-chip-remove { border: 0; background: none; color: inherit; cursor: pointer; min-width: 1.5rem; min-height: 1.5rem; border-radius: 999px; display: inline-flex; align-items: center; justify-content: center; }
+.qb-combobox-status { margin-top: var(--qb-space-1); }
+
 .qb-error-summary { border: 4px solid var(--qb-color-error); padding: var(--qb-space-3); margin-bottom: var(--qb-space-4); }
 .qb-error-summary h2 { margin: 0 0 var(--qb-space-2); font-size: 1.25em; }
 .qb-error-summary ul { margin: 0; padding-inline-start: 1.25em; }
@@ -131,6 +146,7 @@ fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
 .qb-error-summary:focus { outline: var(--qb-focus-ring); outline-offset: 2px; }
 
 @media (forced-colors: active) {
+  .qb-listbox li.qb-option-active { forced-color-adjust: none; background: Highlight; color: HighlightText; }
   .qb-group, .qb-instructions, .qb-question.qb-invalid { border-inline-start-color: CanvasText; }
   :focus-visible { outline-color: Highlight; }
 }

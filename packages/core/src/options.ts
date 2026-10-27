@@ -16,6 +16,8 @@ export interface AnswerOptionView {
   prefix?: string;
   exclusive: boolean;
   ordinal?: number;
+  /** Switched off by answerOptionsToggleExpression. */
+  disabled?: boolean;
 }
 
 export type OptionsResult =

@@ -74,6 +74,8 @@ export function computeEnablement(
   index: DefinitionIndex,
   items: readonly ItemNode[],
   nodes: ReadonlyMap<string, ItemNode>,
+  /** enableWhenExpression result for an instance (undefined = no expression / not evaluated). */
+  expressionEnabled?: (node: ItemNode) => boolean | undefined,
 ): { enabled: Map<string, boolean>; converged: boolean } {
   const byLinkId = new Map<string, ItemNode[]>();
   for (const n of nodes.values()) {
@@ -100,6 +102,8 @@ export function computeEnablement(
         const results = ew.map((c) => evaluateCondition(c, answersFor(c.question, node.path)));
         own = item?.enableBehavior === 'any' ? results.some(Boolean) : results.every(Boolean);
       }
+      const byExpression = expressionEnabled?.(node);
+      if (byExpression !== undefined) own = own && byExpression;
       const value = parentEnabled && own;
       if (enabled.get(node.path) !== value) {
         enabled.set(node.path, value);

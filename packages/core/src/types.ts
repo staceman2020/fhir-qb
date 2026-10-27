@@ -57,6 +57,14 @@ export interface FormSnapshot {
   readonly issues: readonly ValidationIssue[] | null;
   /** Unparseable raw input reported by a control (e.g. "12a" in an integer field), by path. */
   readonly inputErrors: ReadonlyMap<string, string>;
+  /** Paths whose answers are currently set by a calculatedExpression (not overridden by the user). */
+  readonly calculated: ReadonlySet<string>;
+  /** answerExpression results, by path. */
+  readonly answerOptions: ReadonlyMap<string, readonly AnswerValue[]>;
+  /** Options switched off by answerOptionsToggleExpression, by path. */
+  readonly disabledOptions: ReadonlyMap<string, readonly AnswerValue[]>;
+  /** Evaluation problems: expression errors and enableWhen/calculations that do not settle. */
+  readonly expressionIssues: readonly ValidationIssue[];
 }
 
 export interface FeatureFlags {

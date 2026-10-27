@@ -25,8 +25,10 @@ export default defineConfig(({ mode }) => {
       define,
       build: {
         emptyOutDir: false,
+        // fhirpath.js stays out of the single file; define-iife.ts loads qb-fhirpath.js at runtime.
+        rolldownOptions: { external: ['fhirpath', 'fhirpath/fhir-context/r4'] },
         lib: {
-          entry: resolve(import.meta.dirname, 'src/define.ts'),
+          entry: resolve(import.meta.dirname, 'src/define-iife.ts'),
           name: 'QbQuestionnaire',
           formats: ['iife'],
           fileName: () => 'qb-questionnaire.iife.js',
@@ -45,6 +47,7 @@ export default defineConfig(({ mode }) => {
         entry: {
           'qb-questionnaire': resolve(import.meta.dirname, 'src/define.ts'),
           index: resolve(import.meta.dirname, 'src/index.ts'),
+          'qb-fhirpath': resolve(import.meta.dirname, 'src/fhirpath-entry.ts'),
         },
         formats: ['es'],
         fileName: (_format, name) => `${name}.js`,

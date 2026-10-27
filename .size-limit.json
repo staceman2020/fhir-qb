@@ -12,6 +12,12 @@
     "gzip": true
   },
   {
+    "name": "FHIRPath lazy chunk (fhirpath.js + R4 model; third-party, report only, +10% alert)",
+    "path": ["packages/renderer/dist/fhirpath-*.js", "packages/renderer/dist/r4-*.js"],
+    "limit": "252 KB",
+    "gzip": true
+  },
+  {
     "name": "Builder initial route (JS, excl. lazy rich-text editor)",
     "path": ["apps/builder/dist/assets/index-*.js"],
     "limit": "400 KB",

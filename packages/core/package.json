@@ -24,7 +24,8 @@
   },
   "dependencies": {
     "@qb/extensions": "workspace:*",
-    "@types/fhir": "^0.0.44"
+    "@types/fhir": "^0.0.44",
+    "fhirpath": "5.2.2"
   },
   "devDependencies": {
     "@qb/test-fixtures": "workspace:*"

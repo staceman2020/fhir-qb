@@ -148,7 +148,7 @@ describe('engine: enableWhen', () => {
       ],
     };
     const e = createFormEngineSync(q);
-    expect(e.loadIssues.map((i) => i.code)).toContain('enableWhen-cycle');
+    expect(e.getSnapshot().expressionIssues.map((i) => i.code)).toContain('enableWhen-cycle');
   });
 });
 

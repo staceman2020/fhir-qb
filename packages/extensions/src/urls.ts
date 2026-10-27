@@ -72,6 +72,17 @@ export const STD_EXT = {
   itemWeight: `${HL7}itemWeight`,
   preferredTerminologyServer: `${HL7}preferredTerminologyServer`,
   shortText: `${SDC}sdc-questionnaire-shortText`,
+  unitValueSet: `${HL7}questionnaire-unitValueSet`,
+  // Expressions (SDC behaviour, plan §6.4)
+  variable: `${HL7}variable`,
+  calculatedExpression: `${SDC}sdc-questionnaire-calculatedExpression`,
+  initialExpression: `${SDC}sdc-questionnaire-initialExpression`,
+  enableWhenExpression: `${SDC}sdc-questionnaire-enableWhenExpression`,
+  answerExpression: `${SDC}sdc-questionnaire-answerExpression`,
+  answerOptionsToggleExpression: `${SDC}sdc-questionnaire-answerOptionsToggleExpression`,
+  candidateExpression: `${SDC}sdc-questionnaire-candidateExpression`,
+  launchContext: `${SDC}sdc-questionnaire-launchContext`,
+  constraint: `${HL7}questionnaire-constraint`,
   /** R5 back-port (plan §3.1). The extensions-pack URL is also accepted. */
   disabledDisplay: `${R5}extension-Questionnaire.item.disabledDisplay`,
   disabledDisplayAlt: `${HL7}questionnaire-disabledDisplay`,

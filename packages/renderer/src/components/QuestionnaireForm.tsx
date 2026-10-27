@@ -1,6 +1,17 @@
 import { useEffect, useImperativeHandle, useMemo, useRef, useState, type Ref } from 'react';
 import type { QuestionnaireResponse } from 'fhir/r4';
-import type { DisabledDisplay, FormEngine, ValidationIssue } from '@qb/core';
+import {
+  LruCache,
+  TerminologyClient,
+  answerDisplay,
+  resolveTerminologyServer,
+  type DisabledDisplay,
+  type FetchLike,
+  type FormEngine,
+  type ValidationIssue,
+} from '@qb/core';
+import type { TerminologyContext } from '../terminology.js';
+import { plainLabel } from './ItemText.js';
 import { QbContext, type RenderContext } from '../context.js';
 import { useSnapshot } from '../hooks.js';
 import { DEFAULT_STRINGS, type Strings } from '../strings.js';
@@ -23,6 +34,8 @@ export interface QuestionnaireFormProps {
   lang?: string;
   onSubmit?: (response: QuestionnaireResponse) => void;
   onValidate?: (issues: ValidationIssue[]) => void;
+  /** Terminology client; defaults to one using the browser's fetch and an in-memory cache. */
+  terminologyClient?: TerminologyClient;
   ref?: Ref<QuestionnaireFormHandle>;
 }
 
@@ -40,10 +53,29 @@ export function QuestionnaireForm(props: QuestionnaireFormProps) {
   const [showSummary, setShowSummary] = useState(false);
   const [focusRequest, setFocusRequest] = useState(0);
   const strings = useMemo(() => ({ ...DEFAULT_STRINGS, ...props.strings }), [props.strings]);
-  const ctx = useMemo<RenderContext>(
-    () => ({ engine, readOnly, disabledDisplay, strings, fieldIds }),
-    [engine, readOnly, disabledDisplay, strings, fieldIds],
+  const client = useMemo(
+    () =>
+      props.terminologyClient ??
+      (typeof fetch === 'function'
+        ? new TerminologyClient(fetch as unknown as FetchLike, new LruCache())
+        : undefined),
+    [props.terminologyClient],
   );
+  const terminology = useMemo<TerminologyContext | undefined>(
+    () =>
+      client && {
+        client,
+        serverFor: (linkId) =>
+          resolveTerminologyServer(engine.definitions, linkId, engine.options.terminology),
+        displayLanguage: props.lang ?? engine.options.locale ?? engine.questionnaire.language,
+      },
+    [client, engine, props.lang],
+  );
+  const ctx = useMemo<RenderContext>(
+    () => ({ engine, readOnly, disabledDisplay, strings, fieldIds, terminology }),
+    [engine, readOnly, disabledDisplay, strings, fieldIds, terminology],
+  );
+  const announcement = useCalculatedAnnouncements(engine, strings);
 
   useEffect(() => {
     if (focusRequest) summaryRef.current?.focus();
@@ -64,6 +96,9 @@ export function QuestionnaireForm(props: QuestionnaireFormProps) {
   return (
     <QbContext value={ctx}>
       <div className="qb-form" part="form" lang={props.lang ?? q.language}>
+        <div className="qb-visually-hidden" role="status" aria-live="polite">
+          {announcement}
+        </div>
         {!hideTitle && q.title && (
           <h2 className="qb-title" part="title">
             <RichText text={q.title} element={q._title} />
@@ -92,4 +127,49 @@ export function QuestionnaireForm(props: QuestionnaireFormProps) {
       </div>
     </QbContext>
   );
+}
+
+const ANNOUNCE_THROTTLE_MS = 1000;
+
+/**
+ * Announces calculated-value changes in a polite, throttled live region (plan §7.4), so screen
+ * reader users hear a score update without it interrupting typing.
+ */
+function useCalculatedAnnouncements(engine: FormEngine, strings: Strings): string {
+  const [text, setText] = useState('');
+  useEffect(() => {
+    let previous = new Map<string, string>();
+    const read = () => {
+      const snap = engine.getSnapshot();
+      const now = new Map<string, string>();
+      for (const path of snap.calculated)
+        now.set(path, (snap.nodes.get(path)?.answers ?? []).map(answerDisplay).join(', '));
+      return now;
+    };
+    previous = read();
+    let pending = new Map<string, string>();
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const flush = () => {
+      timer = undefined;
+      const parts = [...pending].map(([path, value]) => {
+        const item = engine.definitions.byLinkId.get(
+          engine.getSnapshot().nodes.get(path)?.linkId ?? '',
+        )?.item;
+        return strings.calculatedUpdated(item ? plainLabel(item) : path, value);
+      });
+      pending = new Map();
+      if (parts.length) setText(parts.join('. '));
+    };
+    const unsubscribe = engine.subscribe(() => {
+      const now = read();
+      for (const [path, value] of now) if (previous.get(path) !== value) pending.set(path, value);
+      previous = now;
+      if (pending.size && !timer) timer = setTimeout(flush, ANNOUNCE_THROTTLE_MS);
+    });
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
+  }, [engine, strings]);
+  return text;
 }

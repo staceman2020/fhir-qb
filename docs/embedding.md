@@ -14,6 +14,8 @@
 </script>
 ```
 
+Deploy the whole `renderer/v0/` folder, not just the IIFE file: forms with FHIRPath expressions load `qb-fhirpath.js` (about 225 KB gzipped) from the same folder on demand. Load the IIFE with a normal `<script src>` tag, because the folder is located from `document.currentScript`.
+
 ESM hosts: `import '@qb/renderer/define';`. Use `defineQbQuestionnaire('acme-form')` from `@qb/renderer` when the tag name must follow host naming rules.
 
 ## API
@@ -43,3 +45,7 @@ The ESM build works under `script-src 'self'`: no `eval` or `new Function`. Styl
 
 - **Salesforce Experience Cloud / LWC**: Lightning Web Security constraints on third-party custom elements and Shadow DOM are not yet verified. A scratch-org spike is a Phase 1 exit item. Use the IIFE build as a static resource.
 - **ServiceNow portals** and **Silverstripe**: load the IIFE build with a `<script>` tag and set `questionnaire` from page script. Guides to follow.
+
+## Terminology
+
+Options from `answerValueSet` are fetched with `ValueSet/$expand` from the server chosen per ADR-008. Sets of up to 30 codes show as radio buttons or a list; larger sets, or items with `itemControl` `autocomplete`, show a search box (minimum 2 characters, 250 ms debounce). Only open servers are supported, and they must allow cross-origin requests from the host page. The Settings page in the builder has a "Test connection" button that diagnoses this.

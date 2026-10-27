@@ -14,6 +14,8 @@ import {
 } from '../../model/options.js';
 import { setSimpleExtension } from '../../model/items.js';
 import { useEditor } from '../actions-context.js';
+import { ExpressionEditor } from '../expression-ui.js';
+import { getExpression, setExpression } from '../../model/expressions.js';
 import {
   Checkbox,
   NumberField,
@@ -30,7 +32,12 @@ export function AnswersTab({ item }: { item: QuestionnaireItem }) {
   const options = item.answerOption ?? [];
   const kind = optionKind(options);
   const system = options.find((o) => o.valueCoding?.system)?.valueCoding?.system ?? '';
-  const source = item.answerValueSet !== undefined ? 'valueset' : 'options';
+  const source =
+    getExtension(item, STD_EXT.answerExpression) !== undefined
+      ? 'expression'
+      : item.answerValueSet !== undefined
+        ? 'valueset'
+        : 'options';
 
   const setOptions = (next: QuestionnaireItemAnswerOption[], key?: string) =>
     update((i) => {
@@ -69,10 +76,23 @@ export function AnswersTab({ item }: { item: QuestionnaireItem }) {
             label: 'A value set',
             hint: 'from a terminology server or contained in the form',
           },
+          {
+            value: 'expression',
+            label: 'An expression',
+            hint: 'for example, answers given earlier in the form',
+          },
         ]}
         onChange={(v) =>
           update((i) => {
-            const n = { ...i };
+            if (v === 'expression') {
+              const { answerOption: _o, answerValueSet: _v, ...rest } = i;
+              return setExpression(
+                rest,
+                STD_EXT.answerExpression,
+                getExpression(i, STD_EXT.answerExpression) ?? '',
+              );
+            }
+            const n = setExpression({ ...i }, STD_EXT.answerExpression, undefined);
             if (v === 'valueset') {
               delete n.answerOption;
               n.answerValueSet = n.answerValueSet ?? '';
@@ -86,7 +106,17 @@ export function AnswersTab({ item }: { item: QuestionnaireItem }) {
           })
         }
       />
-      {source === 'valueset' ? (
+      {source === 'expression' ? (
+        <ExpressionEditor
+          label="Options expression"
+          hint="FHIRPath returning the options (codes, text or numbers). Answers that are no longer offered are cleared."
+          value={getExpression(item, STD_EXT.answerExpression) ?? ''}
+          scopeLinkId={id}
+          onChange={(v) =>
+            update((i) => setExpression(i, STD_EXT.answerExpression, v), 'answerExpr')
+          }
+        />
+      ) : source === 'valueset' ? (
         <TextField
           label="Value set URL"
           hint="A canonical URL (e.g. http://loinc.org/vs/LL358-3), or #id for a ValueSet contained in the form."

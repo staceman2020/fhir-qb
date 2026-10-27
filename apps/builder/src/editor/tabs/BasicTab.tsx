@@ -13,6 +13,7 @@ import {
 import { allLinkIds, generateLinkId } from '../../model/linkIds.js';
 import { useEditorState, useStore } from '../../state/hooks.js';
 import { useEditor } from '../actions-context.js';
+import { CodesEditor } from '../CodesEditor.js';
 import { Checkbox, SelectField, TextField } from '../../components/fields.js';
 
 const RichTextEditor = lazy(() => import('../RichTextEditor.js'));
@@ -185,6 +186,7 @@ export function BasicTab({ item }: { item: QuestionnaireItem }) {
           }
         />
       )}
+      {item.type !== 'display' && <CodesEditor item={item} />}
     </form>
   );
 }

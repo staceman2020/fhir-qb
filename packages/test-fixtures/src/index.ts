@@ -1,9 +1,11 @@
-import type { Questionnaire, QuestionnaireItem } from 'fhir/r4';
+import type { Questionnaire, QuestionnaireItem, QuestionnaireResponse } from 'fhir/r4';
 import allTypes from '../questionnaires/all-types.json' with { type: 'json' };
 import channelContent from '../questionnaires/channel-content.json' with { type: 'json' };
 import enableWhen from '../questionnaires/enable-when.json' with { type: 'json' };
 import layoutGrid from '../questionnaires/layout-grid.json' with { type: 'json' };
 import nzPatient from '../questionnaires/nz-patient.json' with { type: 'json' };
+import phq9 from '../questionnaires/phq-9.json' with { type: 'json' };
+import phq9Golden from '../golden/phq-9.json' with { type: 'json' };
 import repeats from '../questionnaires/repeats.json' with { type: 'json' };
 
 /** Returns a deep copy so tests cannot mutate shared fixtures. */
@@ -19,7 +21,19 @@ export const fixtures = {
   layoutGrid: q(layoutGrid),
   channelContent: q(channelContent),
   nzPatient: q(nzPatient),
+  phq9: q(phq9),
 } as const;
+
+export interface GoldenCase {
+  /** linkId → answer code to select. */
+  script: Record<string, string>;
+  response: QuestionnaireResponse;
+}
+
+/** Expected responses for scripted answers (plan §11.1 parity/golden tests). */
+export const golden = {
+  phq9: (): GoldenCase => JSON.parse(JSON.stringify(phq9Golden)) as GoldenCase,
+};
 
 export type FixtureName = keyof typeof fixtures;
 

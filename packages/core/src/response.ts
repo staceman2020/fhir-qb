@@ -4,12 +4,21 @@ import type {
   QuestionnaireResponseItemAnswer,
 } from 'fhir/r4';
 import { isQuestion, type DefinitionIndex } from './definition.js';
-import type { FormSnapshot, ItemNode, ResponseOptions } from './types.js';
+import type { AnswerValue, FormSnapshot, ItemNode, ResponseOptions } from './types.js';
+
+/** Copies an answer; only object values (Coding, Quantity, …) need a deep copy. */
+function copyAnswer(a: AnswerValue): QuestionnaireResponseItemAnswer {
+  const out: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(a))
+    out[k] = typeof v === 'object' && v !== null ? JSON.parse(JSON.stringify(v)) : v;
+  return out as QuestionnaireResponseItemAnswer;
+}
 
 function buildItems(
   index: DefinitionIndex,
   nodes: readonly ItemNode[],
   enabled: ReadonlyMap<string, boolean>,
+  map: Map<string, QuestionnaireResponseItem> | undefined,
 ): QuestionnaireResponseItem[] {
   const out: QuestionnaireResponseItem[] = [];
   for (const node of nodes) {
@@ -17,19 +26,26 @@ function buildItems(
     if (enabled.get(node.path) === false) continue;
     const def = index.byLinkId.get(node.linkId);
     if (!def || def.item.type === 'display') continue;
-    const children = buildItems(index, node.items, enabled);
+    const children = buildItems(index, node.items, enabled, map);
     const base: QuestionnaireResponseItem = { linkId: node.linkId };
     if (def.item.definition) base.definition = def.item.definition;
     if (def.item.text) base.text = def.item.text;
     if (!isQuestion(def.item)) {
-      if (children.length) out.push({ ...base, item: children });
+      if (children.length) {
+        const group = { ...base, item: children };
+        map?.set(node.path, group);
+        out.push(group);
+      }
       continue;
     }
     if (!node.answers.length) continue;
-    const answer: QuestionnaireResponseItemAnswer[] = node.answers.map((a) => ({ ...a }));
+    // A response never shares objects with engine state (callers and FHIRPath may mutate it).
+    const answer: QuestionnaireResponseItemAnswer[] = node.answers.map(copyAnswer);
     // Children of a question nest under its answer (R4 qrs-1); see ItemNode docs.
     if (children.length) answer[0] = { ...answer[0], item: children };
-    out.push({ ...base, answer });
+    const question = { ...base, answer };
+    map?.set(node.path, question);
+    out.push(question);
   }
   return out;
 }
@@ -39,6 +55,8 @@ export function buildResponse(
   snapshot: Pick<FormSnapshot, 'items' | 'enabled'>,
   base: Partial<QuestionnaireResponse> | undefined,
   opts: ResponseOptions = {},
+  /** Filled with instance path → the QuestionnaireResponse item built for it (expression %context). */
+  map?: Map<string, QuestionnaireResponseItem>,
 ): QuestionnaireResponse {
   const q = index.questionnaire;
   const qr: QuestionnaireResponse = {
@@ -49,7 +67,7 @@ export function buildResponse(
   };
   if (q.url) qr.questionnaire = q.version ? `${q.url}|${q.version}` : q.url;
   else if (q.id && !qr.questionnaire) qr.questionnaire = `Questionnaire/${q.id}`;
-  const item = buildItems(index, snapshot.items, snapshot.enabled);
+  const item = buildItems(index, snapshot.items, snapshot.enabled, map);
   if (item.length) qr.item = item;
   else delete qr.item;
   return qr;

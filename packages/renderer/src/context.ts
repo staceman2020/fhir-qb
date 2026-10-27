@@ -1,6 +1,7 @@
 import { createContext, useContext } from 'react';
 import type { DisabledDisplay, FormEngine } from '@qb/core';
 import type { Strings } from './strings.js';
+import type { TerminologyContext } from './terminology.js';
 
 export interface RenderContext {
   engine: FormEngine;
@@ -10,6 +11,8 @@ export interface RenderContext {
   strings: Strings;
   /** Instance path → id of the element the error summary links to. */
   fieldIds: Map<string, string>;
+  /** Terminology access for external value sets; undefined disables it. */
+  terminology: TerminologyContext | undefined;
 }
 
 export const QbContext = createContext<RenderContext | null>(null);

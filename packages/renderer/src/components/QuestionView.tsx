@@ -1,9 +1,10 @@
-import { useEffect, useId, useMemo } from 'react';
+import { useEffect, useId, useMemo, useSyncExternalStore } from 'react';
 import type { QuestionnaireItem } from 'fhir/r4';
-import { itemControl, resolveOptions, type AnswerValue, type ItemNode } from '@qb/core';
+import { itemControl, type AnswerValue, type ItemNode } from '@qb/core';
 import { STD_EXT, getExtension, isShownInChannel } from '@qb/extensions';
 import { useQb } from '../context.js';
 import { useEnabled, useIssues } from '../hooks.js';
+import { useValueSetExpansion } from '../terminology.js';
 import {
   BooleanControl,
   ChoiceControl,
@@ -70,15 +71,40 @@ export function QuestionView({
   const nested = shownChildren.filter((n) => defs.get(n.linkId)?.item.type !== 'display');
   const entryFormat = getExtension(item, STD_EXT.entryFormat)?.valueString;
 
+  // Options can change with answerExpression / answerOptionsToggleExpression results.
+  const dynamic = useSyncExternalStore(engine.subscribe, () =>
+    engine.getSnapshot().answerOptions.get(node.path),
+  );
+  const toggled = useSyncExternalStore(engine.subscribe, () =>
+    engine.getSnapshot().disabledOptions.get(node.path),
+  );
   const options = useMemo(
     () =>
       item.type === 'choice' || item.type === 'open-choice'
-        ? resolveOptions(engine.questionnaire, item)
+        ? engine.optionsFor(node.path)
         : undefined,
-    [engine.questionnaire, item],
+    [engine, item, node.path, dynamic, toggled],
   );
-  const optionCount = options?.kind === 'options' ? options.options.length : 0;
-  const fieldset = usesFieldset(item, optionCount);
+  // External value sets: a short expansion becomes a normal option list, a large one a search (plan §7.3).
+  const external = options?.kind === 'external' ? options.valueSet : undefined;
+  const expansion = useValueSetExpansion(
+    item.linkId,
+    external,
+    itemControl(item) === 'autocomplete',
+  );
+  let effective = options;
+  let searchValueSet: string | undefined;
+  let optionsMessage: string | undefined;
+  if (external) {
+    if (expansion.status === 'list') effective = { kind: 'options', options: expansion.options };
+    else if (expansion.status === 'search') searchValueSet = external;
+    else if (expansion.status === 'loading') optionsMessage = strings.loadingOptions;
+    else if (expansion.status === 'no-server') optionsMessage = strings.noTerminologyServer;
+    else if (expansion.status === 'error')
+      optionsMessage = `${strings.optionsUnavailable} ${expansion.message}`;
+  }
+  const optionCount = effective?.kind === 'options' ? effective.options.length : 0;
+  const fieldset = usesFieldset(item, optionCount) && !searchValueSet && !optionsMessage;
   const ownLabel = item.type === 'boolean' && itemControl(item) === 'check-box';
 
   const hintIds = hints.map((_, i) => `${id}-hint-${i}`);
@@ -119,7 +145,15 @@ export function QuestionView({
   let control;
   if (item.type === 'boolean')
     control = <BooleanControl {...controlProps} labelContent={labelContent} />;
-  else if (options) control = <ChoiceControl {...controlProps} options={options} />;
+  else if (effective)
+    control = (
+      <ChoiceControl
+        {...controlProps}
+        options={effective}
+        searchValueSet={searchValueSet}
+        message={optionsMessage}
+      />
+    );
   else if (item.repeats) control = <RepeatingField {...controlProps} />;
   else {
     const set = (v: AnswerValue | undefined) => engine.setAnswer(node.path, v ? [v] : []);

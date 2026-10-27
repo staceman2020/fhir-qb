@@ -9,3 +9,5 @@ export * from './lint.js';
 export * from './options.js';
 export * from './messages.js';
 export * from './engine.js';
+export * from './expressions.js';
+export * from './terminology.js';

@@ -7,7 +7,7 @@ import { createActions } from '../state/actions.js';
 import { useAutosave, type SaveStatus } from '../state/autosave.js';
 import { StoreContext } from '../state/hooks.js';
 import { EditorStore } from '../state/store.js';
-import { ActionsContext } from '../editor/actions-context.js';
+import { ActionsContext, createPreviewBridge } from '../editor/actions-context.js';
 import { TreePane } from '../editor/TreePane.js';
 import { EditorPane } from '../editor/EditorPane.js';
 import { PreviewPane } from '../editor/PreviewPane.js';
@@ -53,6 +53,7 @@ export function EditorPage({ id }: { id: string }) {
 
 function Editor({ store, id, status }: { store: EditorStore; id: string; status: SaveStatus }) {
   const actions = useMemo(() => createActions(store), [store]);
+  const preview = useMemo(() => createPreviewBridge(), []);
   const state = useSyncExternalStore(store.subscribe, store.getState);
   const [announcement, setAnnouncement] = useState('');
   const [treeOpen, setTreeOpen] = useState(true);
@@ -82,7 +83,7 @@ function Editor({ store, id, status }: { store: EditorStore; id: string; status:
     .join(' ');
   return (
     <StoreContext value={store}>
-      <ActionsContext value={{ actions, announce: setAnnouncement, questionnaireId: id }}>
+      <ActionsContext value={{ actions, announce: setAnnouncement, questionnaireId: id, preview }}>
         <div className="editor-header">
           <h1>{q.title || 'Untitled form'}</h1>
           <span role="status" className={status === 'error' ? 'badge error' : 'muted'}>

@@ -36,6 +36,8 @@ Automated: axe-core in Vitest browser mode for every fixture × breakpoint (to b
 
 ## Outstanding
 
-- [ ] Polite live region for calculated values (Phase 3).
+- [ ] Calculated values are announced in a polite live region, throttled to one message per second.
+- [ ] The autocomplete follows the APG combobox pattern: arrow keys, Enter, Escape, `aria-activedescendant`, and a result count announced in a status region. Selected answers in a multi-select appear as a list with labelled remove buttons.
+- [ ] Options switched off by an expression are hidden (or shown disabled if already selected).
 - [ ] Focus not obscured by sticky header/footer (2.4.11) once header/footer controls exist (Phase 4).
 - [ ] PDF/UA verification with veraPDF (Phase 5).

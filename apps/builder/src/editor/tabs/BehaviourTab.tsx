@@ -8,7 +8,29 @@ import { flatten, findPath, isDescendantPath } from '../../model/tree.js';
 import { isChoice, isQuestionType } from '../../model/items.js';
 import { useEditorState } from '../../state/hooks.js';
 import { useEditor } from '../actions-context.js';
-import { NumberField, RadioGroup, SelectField, TextField } from '../../components/fields.js';
+import {
+  Checkbox,
+  NumberField,
+  RadioGroup,
+  SelectField,
+  TextField,
+} from '../../components/fields.js';
+import { useState } from 'react';
+import { STD_EXT, getExtension } from '@qb/extensions';
+import {
+  getConstraints,
+  getExpression,
+  getVariables,
+  setConstraints,
+  setExpression,
+  setValueMethod,
+  setVariables,
+  valueMethod,
+  valueMethodsFor,
+  type ValueMethod,
+} from '../../model/expressions.js';
+import { optionText } from '../../model/options.js';
+import { ConstraintsEditor, ExpressionEditor, VariablesEditor } from '../expression-ui.js';
 
 type Operator = QuestionnaireItemEnableWhen['operator'];
 const OPS: { value: Operator; label: string }[] = [
@@ -257,6 +279,10 @@ function InitialField({
 }
 
 export function BehaviourTab({ item }: { item: QuestionnaireItem }) {
+  // 'type' and 'pick' have no stored marker until a value is chosen, so remember the choice locally.
+  const [chosen, setChosen] = useState<ValueMethod>();
+  const stored = valueMethod(item);
+  const method = stored !== 'none' ? stored : (chosen ?? 'none');
   const q = useEditorState((s) => s.questionnaire);
   const { actions, announce } = useEditor();
   const id = item.linkId;
@@ -392,24 +418,134 @@ export function BehaviourTab({ item }: { item: QuestionnaireItem }) {
           />
         </div>
       )}
-      {isQuestionType(item.type) && !isChoice(item.type) && (
+      <Checkbox
+        label="Also require an expression to be true"
+        hint="For conditions that the builder above cannot express."
+        checked={getExtension(item, STD_EXT.enableWhenExpression) !== undefined}
+        onChange={(on) =>
+          update((i) => setExpression(i, STD_EXT.enableWhenExpression, on ? '' : undefined))
+        }
+      />
+      {getExtension(item, STD_EXT.enableWhenExpression) !== undefined && (
+        <ExpressionEditor
+          label="Show this item only when this expression is true"
+          value={getExpression(item, STD_EXT.enableWhenExpression) ?? ''}
+          scopeLinkId={id}
+          onChange={(v) =>
+            update((i) => setExpression(i, STD_EXT.enableWhenExpression, v), 'ewExpr')
+          }
+        />
+      )}
+
+      {isQuestionType(item.type) && (
         <>
-          <h3 style={{ marginTop: '1rem' }}>Default answer</h3>
-          <InitialField
-            item={item}
-            onChange={(init) =>
-              update((i) => {
-                const n = { ...i };
-                if (init) n.initial = [init];
-                else delete n.initial;
-                return n;
-              }, 'initial')
-            }
+          <h3 style={{ marginTop: '1rem' }}>Answer</h3>
+          <RadioGroup
+            legend="How is the answer filled in?"
+            value={method}
+            options={valueMethodsFor(item)}
+            onChange={(v) => {
+              setChosen(v as ValueMethod);
+              update((i) => setValueMethod(i, v as ValueMethod));
+            }}
           />
-          <p className="muted">Calculated answers and expressions are not supported yet.</p>
+          {method === 'type' && (
+            <InitialField
+              item={item}
+              onChange={(init) =>
+                update((i) => {
+                  const n = { ...i };
+                  if (init) n.initial = [init];
+                  else delete n.initial;
+                  return n;
+                }, 'initial')
+              }
+            />
+          )}
+          {method === 'pick' && (
+            <fieldset>
+              <legend>Default options</legend>
+              {(item.answerOption ?? []).map((o, idx) => (
+                <Checkbox
+                  key={idx}
+                  label={optionText(o)}
+                  checked={o.initialSelected === true}
+                  onChange={(v) =>
+                    update((i) => ({
+                      ...i,
+                      answerOption: (i.answerOption ?? []).map((x, j) => {
+                        if (j !== idx && !(v && !i.repeats)) return x;
+                        const { initialSelected: _s, ...rest } = x;
+                        return j === idx && v ? { ...rest, initialSelected: true } : rest;
+                      }),
+                    }))
+                  }
+                />
+              ))}
+              {!item.answerOption?.length && (
+                <p className="muted">This question has no option list.</p>
+              )}
+            </fieldset>
+          )}
+          {method === 'compute-initial' && (
+            <ExpressionEditor
+              label="Starting answer"
+              hint="FHIRPath, evaluated once when the form opens (for example from launch context such as %patient)."
+              value={getExpression(item, STD_EXT.initialExpression) ?? ''}
+              scopeLinkId={id}
+              onChange={(v) =>
+                update((i) => setExpression(i, STD_EXT.initialExpression, v), 'initialExpr')
+              }
+            />
+          )}
+          {method === 'compute' && (
+            <>
+              <ExpressionEditor
+                label="Calculated answer"
+                hint="FHIRPath, recalculated whenever answers change."
+                value={getExpression(item, STD_EXT.calculatedExpression) ?? ''}
+                scopeLinkId={id}
+                onChange={(v) =>
+                  update((i) => setExpression(i, STD_EXT.calculatedExpression, v), 'calcExpr')
+                }
+              />
+              <Checkbox
+                label="Read-only"
+                hint="When unticked, people can type over the calculated answer; it then stops recalculating."
+                checked={item.readOnly === true}
+                onChange={(v) =>
+                  update((i) => {
+                    const n = { ...i };
+                    if (v) n.readOnly = true;
+                    else delete n.readOnly;
+                    return n;
+                  })
+                }
+              />
+            </>
+          )}
         </>
       )}
-      {isChoice(item.type) && <p className="muted">Set default options on the Answers tab.</p>}
+
+      <h3 style={{ marginTop: '1rem' }}>Variables</h3>
+      <p className="muted">Available to this item and the items inside it.</p>
+      <VariablesEditor
+        rows={getVariables(item)}
+        scopeLinkId={id}
+        onChange={(rows, key) => update((i) => setVariables(i, rows), key)}
+      />
+
+      {item.type !== 'display' && (
+        <>
+          <h3 style={{ marginTop: '1rem' }}>Rules</h3>
+          <p className="muted">Checked when the form is submitted.</p>
+          <ConstraintsEditor
+            rows={getConstraints(item)}
+            scopeLinkId={id}
+            onChange={(rows, key) => update((i) => setConstraints(i, rows), key)}
+          />
+        </>
+      )}
     </form>
   );
 }

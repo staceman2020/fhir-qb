@@ -9,6 +9,8 @@ import {
 } from '@qb/core';
 import { STD_EXT, getExtension, getExtensions } from '@qb/extensions';
 import { useQb } from '../context.js';
+import { useValueSetExpansion, useValueSetSearch } from '../terminology.js';
+import { Autocomplete } from './Autocomplete.js';
 
 export interface ControlProps {
   item: QuestionnaireItem;
@@ -40,12 +42,44 @@ export function choiceControlKind(
   return optionCount > 7 ? 'drop-down' : 'radio-button';
 }
 
-export function ChoiceControl(p: ControlProps & { options: OptionsResult }) {
+function ValueSetSearch(p: ControlProps & { valueSet: string }) {
+  const { engine } = useQb();
+  const search = useValueSetSearch(p.item.linkId, p.valueSet);
+  if (!search) return null;
+  return (
+    <Autocomplete
+      linkId={p.item.linkId}
+      inputId={p.inputId}
+      describedBy={p.describedBy}
+      invalid={p.invalid}
+      readOnly={p.readOnly}
+      label={p.label}
+      multiple={p.item.repeats === true}
+      allowFreeText={p.item.type === 'open-choice'}
+      selected={p.node.answers}
+      onChange={(answers) => engine.setAnswer(p.node.path, answers)}
+      search={search}
+    />
+  );
+}
+
+export function ChoiceControl(
+  p: ControlProps & {
+    options: OptionsResult;
+    /** Large external value set: search it with an autocomplete. */
+    searchValueSet?: string | undefined;
+    /** Shown instead of options (loading, no server, error). */
+    message?: string | undefined;
+  },
+) {
   const { engine, strings } = useQb();
   const { item, node, inputId, readOnly } = p;
   const open = item.type === 'open-choice';
-  const options = p.options.kind === 'options' ? p.options.options : [];
   const answers = node.answers;
+  // Options switched off by answerOptionsToggleExpression are hidden unless already selected.
+  const options = (p.options.kind === 'options' ? p.options.options : []).filter(
+    (o) => !o.disabled || answers.some((a) => answersEqual(a, o.value)),
+  );
   const isOption = (a: AnswerValue) => options.some((o) => answersEqual(o.value, a));
   const otherAnswer = open
     ? answers.find((a) => a.valueString !== undefined && !isOption(a))
@@ -60,8 +94,13 @@ export function ChoiceControl(p: ControlProps & { options: OptionsResult }) {
   const horizontal = getExtension(item, STD_EXT.choiceOrientation)?.valueCode === 'horizontal';
   const optionId = (i: number) => (i === 0 ? inputId : `${inputId}-${i}`);
 
-  if (p.options.kind === 'external' && !open)
-    return <p className="qb-hint">{strings.optionsUnavailable}</p>;
+  if (p.searchValueSet) return <ValueSetSearch {...p} valueSet={p.searchValueSet} />;
+  if (p.message)
+    return (
+      <p className="qb-hint" role="status">
+        {p.message}
+      </p>
+    );
 
   const otherInput = (visible: boolean, multi: boolean) =>
     visible && (
@@ -109,7 +148,7 @@ export function ChoiceControl(p: ControlProps & { options: OptionsResult }) {
         >
           <option value="">{strings.selectPlaceholder}</option>
           {options.map((o, i) => (
-            <option key={i} value={i}>
+            <option key={i} value={i} disabled={o.disabled === true}>
               {o.prefix ? `${o.prefix} ` : ''}
               {o.label}
             </option>
@@ -146,7 +185,7 @@ export function ChoiceControl(p: ControlProps & { options: OptionsResult }) {
             name={inputId}
             part="input"
             checked={answers.some((a) => answersEqual(a, o.value))}
-            disabled={readOnly}
+            disabled={readOnly || o.disabled === true}
             onChange={() => toggle(i)}
           />
           <label htmlFor={optionId(i)}>
@@ -446,7 +485,17 @@ function NumberInput(p: WithCommon) {
 
 function QuantityInput(p: WithCommon) {
   const { strings } = useQb();
-  const units = useMemo(() => unitOptions(p.item), [p.item]);
+  const unitVs = getExtension(p.item, STD_EXT.unitValueSet)?.valueCanonical;
+  const vsUnits = useValueSetExpansion(p.item.linkId, unitVs, false);
+  const units = useMemo(
+    () =>
+      vsUnits.status === 'list'
+        ? vsUnits.options
+            .map((o) => o.value.valueCoding)
+            .filter((c): c is Coding => c !== undefined)
+        : unitOptions(p.item),
+    [p.item, vsUnits],
+  );
   const q = p.value?.valueQuantity;
   const [raw, setRaw] = useNumericText(q?.value, parseDecimal);
   const [unitIdx, setUnitIdx] = useState(() =>

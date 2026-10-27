@@ -22,6 +22,7 @@ function WebPreview({
   onResponse: (qr: QuestionnaireResponse | undefined) => void;
 }) {
   const q = useEditorState((s) => s.questionnaire);
+  const { preview } = useEditor();
   const repo = useRepo();
   const host = useRef<HTMLDivElement>(null);
   const el = useRef<QbQuestionnaireElement | null>(null);
@@ -32,17 +33,25 @@ function WebPreview({
   useEffect(() => {
     const node = document.createElement('qb-questionnaire') as QbQuestionnaireElement;
     node.setAttribute('hide-submit', '');
-    const onChange = (e: Event) => onResponse((e as CustomEvent).detail.response);
+    const onChange = (e: Event) => {
+      onResponse((e as CustomEvent).detail.response);
+      preview.notify();
+    };
     node.addEventListener('qb-change', onChange);
-    node.addEventListener('qb-ready', () => onResponse(node.getQuestionnaireResponse()));
+    node.addEventListener('qb-ready', () => {
+      onResponse(node.getQuestionnaireResponse());
+      preview.notify();
+    });
     host.current?.append(node);
     el.current = node;
+    preview.attach(node);
     return () => {
       node.removeEventListener('qb-change', onChange);
       node.remove();
       el.current = null;
+      preview.attach(null);
     };
-  }, [onResponse]);
+  }, [onResponse, preview]);
 
   useEffect(() => {
     if (tx) el.current?.setAttribute('terminology-server', tx);

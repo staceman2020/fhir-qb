@@ -2,9 +2,11 @@ import { createRef } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type { Bundle, FhirResource, Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import {
+  LruCache,
   NotImplementedError,
+  TerminologyClient,
   createFormEngine,
-  validateResponse,
+  type FetchLike,
   type FhirClientAdapter,
   type FormEngine,
   type ResponseOptions,
@@ -67,7 +69,31 @@ export class QbQuestionnaireElement extends HTMLElement {
   launchContext: Record<string, FhirResource> | undefined;
   fhirClient: FhirClientAdapter | undefined;
   resolveCanonical: ((url: string) => Promise<FhirResource | undefined>) | undefined;
-  terminologyFetch: typeof fetch | undefined;
+  #terminologyFetch: typeof fetch | undefined;
+  #terminologyClient: TerminologyClient | undefined;
+  /** One in-memory cache per element, kept across rebuilds (plan §6.9). */
+  #terminologyCache = new LruCache();
+
+  /** Optional fetch override for terminology calls, e.g. to route them through a host proxy (plan §7.6). */
+  get terminologyFetch(): typeof fetch | undefined {
+    return this.#terminologyFetch;
+  }
+  set terminologyFetch(f: typeof fetch | undefined) {
+    this.#terminologyFetch = f;
+    this.#terminologyClient = undefined;
+    this.#render();
+  }
+
+  #client(): TerminologyClient | undefined {
+    const f =
+      this.#terminologyFetch ?? (typeof fetch === 'function' ? fetch.bind(globalThis) : undefined);
+    if (!f) return undefined;
+    this.#terminologyClient ??= new TerminologyClient(
+      f as unknown as FetchLike,
+      this.#terminologyCache,
+    );
+    return this.#terminologyClient;
+  }
 
   constructor() {
     super();
@@ -213,9 +239,9 @@ export class QbQuestionnaireElement extends HTMLElement {
     if (!engine || !this.#internals) return;
     const snapshot = engine.getSnapshot();
     this.#internals.setFormValue(JSON.stringify(engine.getResponse()));
-    const issues = (
-      snapshot.issues ?? validateResponse(engine.definitions, snapshot, engine.options.messages)
-    ).filter((i) => i.severity === 'error');
+    const issues = (snapshot.issues ?? engine.collectIssues()).filter(
+      (i) => i.severity === 'error',
+    );
     if (issues.length) this.#internals.setValidity({ customError: true }, issues[0]!.message);
     else this.#internals.setValidity({});
   }
@@ -240,6 +266,7 @@ export class QbQuestionnaireElement extends HTMLElement {
         disabledDisplay={dd === 'protected' ? 'protected' : 'hidden'}
         hideSubmit={this.hasAttribute('hide-submit')}
         hideTitle={this.hasAttribute('hide-title')}
+        {...(this.#client() ? { terminologyClient: this.#client()! } : {})}
         {...(this.lang ? { lang: this.lang } : {})}
         onValidate={(issues) => this.#emit('qb-validate', { issues })}
         onSubmit={(response) => this.#emit('qb-submit', { response })}

@@ -9,6 +9,16 @@ import {
 } from '@qb/extensions';
 import { useEditorState } from '../state/hooks.js';
 import { useEditor } from './actions-context.js';
+import { ConstraintsEditor, VariablesEditor } from './expression-ui.js';
+import { ScoringWizard } from './ScoringWizard.js';
+import { TestConnection } from '../components/TestConnection.js';
+import { useDefaultServer } from '../terminology.js';
+import {
+  getConstraints,
+  getVariables,
+  setConstraints,
+  setVariables,
+} from '../model/expressions.js';
 import { SelectField, TextField } from '../components/fields.js';
 
 type Key =
@@ -17,6 +27,7 @@ type Key =
 export function FormSettings() {
   const q = useEditorState((s) => s.questionnaire);
   const { actions } = useEditor();
+  const defaultServer = useDefaultServer();
   const set = (key: Key) => (v: string) =>
     actions.updateForm((x) => {
       const next = { ...x };
@@ -114,6 +125,21 @@ export function FormSettings() {
           setExt(QB_EXT.layoutPrintBreakpoint, v === 'md' ? undefined : { valueCode: v })
         }
       />
+      <TestConnection server={tx || defaultServer} />
+      <h3>Variables</h3>
+      <p className="muted">Available to every item in the form.</p>
+      <VariablesEditor
+        rows={getVariables(q)}
+        onChange={(rows, key) => actions.updateForm((x) => setVariables(x, rows), key)}
+      />
+      <h3>Form rules</h3>
+      <p className="muted">Checked against the whole response when the form is submitted.</p>
+      <ConstraintsEditor
+        rows={getConstraints(q)}
+        onChange={(rows, key) => actions.updateForm((x) => setConstraints(x, rows), key)}
+      />
+      <h3>Scoring</h3>
+      <ScoringWizard />
     </form>
   );
 }
