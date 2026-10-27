@@ -1,0 +1,6 @@
+pnpm-lock.yaml
+plan.md
+dist
+coverage
+ig/fsh-generated
+dist-demo

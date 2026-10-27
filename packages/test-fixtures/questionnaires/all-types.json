@@ -1,0 +1,199 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "all-types",
+  "url": "http://example.org/fhir/qb/Questionnaire/all-types",
+  "version": "1.0.0",
+  "status": "draft",
+  "title": "All item types",
+  "item": [
+    {
+      "linkId": "intro",
+      "type": "display",
+      "text": "This form contains one of every R4 item type."
+    },
+    {
+      "linkId": "basics",
+      "type": "group",
+      "text": "Basic types",
+      "item": [
+        {
+          "linkId": "string",
+          "type": "string",
+          "text": "String",
+          "required": true,
+          "maxLength": 20
+        },
+        { "linkId": "text", "type": "text", "text": "Text" },
+        { "linkId": "url", "type": "url", "text": "URL" },
+        { "linkId": "boolean", "type": "boolean", "text": "Boolean" },
+        {
+          "linkId": "integer",
+          "type": "integer",
+          "text": "Integer",
+          "extension": [
+            { "url": "http://hl7.org/fhir/StructureDefinition/minValue", "valueInteger": 0 },
+            { "url": "http://hl7.org/fhir/StructureDefinition/maxValue", "valueInteger": 120 }
+          ]
+        },
+        {
+          "linkId": "decimal",
+          "type": "decimal",
+          "text": "Decimal",
+          "extension": [
+            { "url": "http://hl7.org/fhir/StructureDefinition/maxDecimalPlaces", "valueInteger": 2 }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "temporal",
+      "type": "group",
+      "text": "Dates and times",
+      "item": [
+        { "linkId": "date", "type": "date", "text": "Date" },
+        { "linkId": "dateTime", "type": "dateTime", "text": "Date and time" },
+        { "linkId": "time", "type": "time", "text": "Time" }
+      ]
+    },
+    {
+      "linkId": "choices",
+      "type": "group",
+      "text": "Choices",
+      "item": [
+        {
+          "linkId": "choice",
+          "type": "choice",
+          "text": "Choice (radio)",
+          "answerOption": [
+            {
+              "valueCoding": {
+                "system": "http://example.org/colour",
+                "code": "red",
+                "display": "Red"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://example.org/colour",
+                "code": "green",
+                "display": "Green"
+              }
+            },
+            {
+              "valueCoding": {
+                "system": "http://example.org/colour",
+                "code": "blue",
+                "display": "Blue"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "choice-multi",
+          "type": "choice",
+          "text": "Choice (multiple)",
+          "repeats": true,
+          "answerOption": [
+            { "valueString": "Apples" },
+            { "valueString": "Pears" },
+            {
+              "valueString": "None of these",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-optionExclusive",
+                  "valueBoolean": true
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "choice-vs",
+          "type": "choice",
+          "text": "Choice (contained ValueSet, drop-down)",
+          "answerValueSet": "#yesnodk",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "drop-down"
+                  }
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "open-choice",
+          "type": "open-choice",
+          "text": "Open choice",
+          "answerOption": [{ "valueString": "Bus" }, { "valueString": "Train" }]
+        }
+      ]
+    },
+    {
+      "linkId": "other",
+      "type": "group",
+      "text": "Other types",
+      "item": [
+        {
+          "linkId": "quantity",
+          "type": "quantity",
+          "text": "Weight",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "kg",
+                "display": "kg"
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unitOption",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "[lb_av]",
+                "display": "lb"
+              }
+            }
+          ]
+        },
+        {
+          "linkId": "attachment",
+          "type": "attachment",
+          "text": "Attachment",
+          "extension": [
+            { "url": "http://hl7.org/fhir/StructureDefinition/maxSize", "valueDecimal": 1048576 }
+          ]
+        },
+        { "linkId": "reference", "type": "reference", "text": "Reference" }
+      ]
+    }
+  ],
+  "contained": [
+    {
+      "resourceType": "ValueSet",
+      "id": "yesnodk",
+      "status": "active",
+      "compose": {
+        "include": [
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/v2-0136",
+            "concept": [
+              { "code": "Y", "display": "Yes" },
+              { "code": "N", "display": "No" }
+            ]
+          },
+          {
+            "system": "http://terminology.hl7.org/CodeSystem/data-absent-reason",
+            "concept": [{ "code": "asked-unknown", "display": "Don't know" }]
+          }
+        ]
+      }
+    }
+  ]
+}

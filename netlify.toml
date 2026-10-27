@@ -1,0 +1,17 @@
+# Phase 0/1: publishes the renderer demo. The builder app (apps/builder) replaces this in Phase 2 (plan §9.5).
+[build]
+  command = "corepack enable && pnpm install --frozen-lockfile && pnpm --filter @qb/renderer build:demo"
+  publish = "packages/renderer/dist-demo"
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    Content-Security-Policy = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; connect-src 'self' https:; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=()"
+    X-Content-Type-Options = "nosniff"
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

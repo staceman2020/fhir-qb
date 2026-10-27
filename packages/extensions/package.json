@@ -1,0 +1,28 @@
+{
+  "name": "@qb/extensions",
+  "version": "0.0.0",
+  "description": "URL constants, typed accessors and validators for the qb-* FHIR extensions.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -b"
+  },
+  "dependencies": {
+    "@types/fhir": "^0.0.44"
+  }
+}

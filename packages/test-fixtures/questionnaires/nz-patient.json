@@ -1,0 +1,35 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "nz-patient",
+  "url": "http://example.org/fhir/qb/Questionnaire/nz-patient",
+  "status": "draft",
+  "language": "en-NZ",
+  "title": "Pātai mō te tūroro — Patient details",
+  "item": [
+    {
+      "linkId": "nhi",
+      "type": "string",
+      "text": "NHI number",
+      "required": true,
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/regex",
+          "valueString": "[A-HJ-NP-Z]{3}([0-9]{4}|[0-9]{2}[A-HJ-NP-Z]{2})"
+        },
+        { "url": "http://hl7.org/fhir/StructureDefinition/entryFormat", "valueString": "ABC1234" }
+      ]
+    },
+    { "linkId": "iwi", "type": "string", "text": "Iwi affiliation (optional) — e.g. Ngāti Porou" },
+    { "linkId": "dob", "type": "date", "text": "Date of birth", "required": true },
+    {
+      "linkId": "language",
+      "type": "choice",
+      "text": "Preferred language",
+      "answerOption": [
+        { "valueCoding": { "system": "urn:ietf:bcp:47", "code": "en-NZ", "display": "English" } },
+        { "valueCoding": { "system": "urn:ietf:bcp:47", "code": "mi", "display": "Te reo Māori" } },
+        { "valueCoding": { "system": "urn:ietf:bcp:47", "code": "sm", "display": "Gagana Sāmoa" } }
+      ]
+    }
+  ]
+}

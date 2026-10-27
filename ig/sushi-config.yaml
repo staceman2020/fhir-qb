@@ -1,0 +1,31 @@
+# qb Implementation Guide — grid layout and channel-specific content extensions (plan §5).
+# Canonical is a placeholder (open decision #1); it must match packages/extensions/src/canonical.ts.
+id: example.fhir.qb
+canonical: http://example.org/fhir/qb
+name: QBQuestionnaireExtensions
+title: 'qb Questionnaire Layout and Channel Extensions'
+description: Extensions for 12-column responsive layout and web/PDF channel-specific content on FHIR R4 SDC Questionnaires.
+status: draft
+version: 0.1.0
+fhirVersion: 4.0.1
+copyrightYear: 2026+
+releaseLabel: ci-build
+license: Apache-2.0
+jurisdiction: urn:iso:std:iso:3166#NZ "New Zealand"
+publisher:
+  name: qb project (placeholder)
+
+dependencies:
+  # SDC 3.0.0 is the conformance floor (plan §3.2). The ci-build snapshot goes in ig/vendor/ (see README).
+  hl7.fhir.uv.sdc: 3.0.0
+
+pages:
+  index.md:
+    title: Home
+  degradation.md:
+    title: Degradation rules
+
+menu:
+  Home: index.html
+  Degradation rules: degradation.html
+  Artifacts: artifacts.html

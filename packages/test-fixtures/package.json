@@ -1,0 +1,16 @@
+{
+  "name": "@qb/test-fixtures",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Shared Questionnaire fixtures for tests, demos and IG validation.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./questionnaires/*": "./questionnaires/*"
+  },
+  "dependencies": {
+    "@qb/extensions": "workspace:*",
+    "@types/fhir": "^0.0.44"
+  }
+}

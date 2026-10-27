@@ -1,0 +1,39 @@
+body {
+  font-family: system-ui, sans-serif;
+  margin: 0 auto;
+  padding: 1rem;
+  max-width: 1600px;
+  color: #1b1b1b;
+  background: #fff;
+}
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.layout {
+  display: grid;
+  grid-template-columns: minmax(0, auto) minmax(18rem, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.form-panel {
+  border: 1px dashed #888;
+  padding: 1rem;
+  width: 900px;
+  max-width: 100%;
+}
+.output-panel pre {
+  background: #f3f3f3;
+  padding: 1rem;
+  overflow: auto;
+  max-height: 80vh;
+  font-size: 0.8rem;
+}
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+}

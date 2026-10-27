@@ -1,0 +1,13 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+.DS_Store
+# SUSHI / IG Publisher output
+ig/fsh-generated/
+ig/output/
+ig/temp/
+ig/template/
+ig/input-cache/
+.netlify/
+packages/renderer/dist-demo/

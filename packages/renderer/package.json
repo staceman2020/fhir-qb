@@ -1,0 +1,52 @@
+{
+  "name": "@qb/renderer",
+  "version": "0.0.0",
+  "description": "<qb-questionnaire> Web Component and React components for completing FHIR Questionnaires.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": [
+    "./src/define.ts",
+    "./dist/qb-questionnaire.js",
+    "./dist/qb-questionnaire.iife.js"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./define": "./src/define.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.js"
+      },
+      "./define": {
+        "types": "./dist/types/define.d.ts",
+        "default": "./dist/qb-questionnaire.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && vite build --mode iife && tsc -b",
+    "build:demo": "vite build --mode demo",
+    "dev": "vite --mode demo"
+  },
+  "dependencies": {
+    "@qb/core": "workspace:*",
+    "@qb/extensions": "workspace:*",
+    "@types/fhir": "^0.0.44",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  },
+  "devDependencies": {
+    "@qb/test-fixtures": "workspace:*",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.8",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2"
+  }
+}

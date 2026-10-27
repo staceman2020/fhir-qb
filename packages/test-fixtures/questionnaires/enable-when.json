@@ -1,0 +1,96 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "enable-when",
+  "url": "http://example.org/fhir/qb/Questionnaire/enable-when",
+  "status": "draft",
+  "title": "Conditional questions",
+  "item": [
+    { "linkId": "smoker", "type": "boolean", "text": "Do you smoke?" },
+    {
+      "linkId": "per-day",
+      "type": "integer",
+      "text": "How many cigarettes a day?",
+      "required": true,
+      "enableWhen": [{ "question": "smoker", "operator": "=", "answerBoolean": true }]
+    },
+    {
+      "linkId": "heavy",
+      "type": "display",
+      "text": "Talk to your doctor about support to quit.",
+      "enableWhen": [{ "question": "per-day", "operator": ">=", "answerInteger": 20 }]
+    },
+    {
+      "linkId": "contact",
+      "type": "choice",
+      "text": "How should we contact you?",
+      "answerOption": [
+        {
+          "valueCoding": {
+            "system": "http://example.org/contact",
+            "code": "email",
+            "display": "Email"
+          }
+        },
+        {
+          "valueCoding": {
+            "system": "http://example.org/contact",
+            "code": "phone",
+            "display": "Phone"
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "contact-details",
+      "type": "group",
+      "text": "Contact details",
+      "enableWhen": [{ "question": "contact", "operator": "exists", "answerBoolean": true }],
+      "item": [
+        {
+          "linkId": "email",
+          "type": "string",
+          "text": "Email address",
+          "enableWhen": [
+            {
+              "question": "contact",
+              "operator": "=",
+              "answerCoding": { "system": "http://example.org/contact", "code": "email" }
+            }
+          ],
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/regex",
+              "valueString": "[^@\\s]+@[^@\\s]+\\.[^@\\s]+"
+            }
+          ]
+        },
+        {
+          "linkId": "phone",
+          "type": "string",
+          "text": "Phone number",
+          "enableWhen": [
+            {
+              "question": "contact",
+              "operator": "=",
+              "answerCoding": { "system": "http://example.org/contact", "code": "phone" }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "any-flag",
+      "type": "display",
+      "text": "Either you smoke or chose phone contact.",
+      "enableBehavior": "any",
+      "enableWhen": [
+        { "question": "smoker", "operator": "=", "answerBoolean": true },
+        {
+          "question": "contact",
+          "operator": "=",
+          "answerCoding": { "system": "http://example.org/contact", "code": "phone" }
+        }
+      ]
+    }
+  ]
+}

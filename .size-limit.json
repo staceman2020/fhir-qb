@@ -1,0 +1,14 @@
+[
+  {
+    "name": "qb-questionnaire ESM (incl. React, excl. lazy chunks)",
+    "path": ["packages/renderer/dist/qb-questionnaire.js", "packages/renderer/dist/element-*.js"],
+    "limit": "110 KB",
+    "gzip": true
+  },
+  {
+    "name": "qb-questionnaire IIFE",
+    "path": "packages/renderer/dist/qb-questionnaire.iife.js",
+    "limit": "110 KB",
+    "gzip": true
+  }
+]

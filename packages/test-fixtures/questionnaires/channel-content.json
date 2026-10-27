@@ -1,0 +1,104 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "channel-content",
+  "url": "http://example.org/fhir/qb/Questionnaire/channel-content",
+  "status": "draft",
+  "title": "Channel content",
+  "item": [
+    {
+      "linkId": "pdf-instructions",
+      "type": "display",
+      "text": "Use black ink and write in CAPITAL LETTERS.",
+      "extension": [
+        {
+          "url": "http://example.org/fhir/qb/StructureDefinition/qb-render-channel",
+          "valueCode": "pdf"
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+          "valueBoolean": true
+        },
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-displayCategory",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-display-category",
+                "code": "instructions"
+              }
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "web-help",
+      "type": "display",
+      "text": "Your answers are saved as you type.",
+      "extension": [
+        {
+          "url": "http://example.org/fhir/qb/StructureDefinition/qb-render-channel",
+          "valueCode": "web"
+        }
+      ]
+    },
+    {
+      "linkId": "nhi",
+      "type": "string",
+      "text": "NHI number",
+      "extension": [
+        {
+          "url": "http://example.org/fhir/qb/StructureDefinition/qb-pdf-answer-space",
+          "extension": [
+            { "url": "style", "valueCode": "comb" },
+            { "url": "combCount", "valuePositiveInt": 7 }
+          ]
+        }
+      ],
+      "item": [
+        {
+          "linkId": "nhi-pdf-help",
+          "type": "display",
+          "text": "Write one character per box.",
+          "extension": [
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-render-channel",
+              "valueCode": "pdf"
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+              "valueBoolean": true
+            }
+          ]
+        },
+        {
+          "linkId": "nhi-help",
+          "type": "display",
+          "text": "Your NHI number is on prescriptions and hospital letters.",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  { "system": "http://hl7.org/fhir/questionnaire-item-control", "code": "help" }
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "hidden-calc",
+      "type": "string",
+      "text": "Office use",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-hidden",
+          "valueBoolean": true
+        }
+      ],
+      "initial": [{ "valueString": "web-submission" }]
+    }
+  ]
+}

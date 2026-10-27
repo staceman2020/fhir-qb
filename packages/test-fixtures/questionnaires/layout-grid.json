@@ -1,0 +1,76 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "layout-grid",
+  "url": "http://example.org/fhir/qb/Questionnaire/layout-grid",
+  "status": "draft",
+  "title": "Responsive layout",
+  "extension": [
+    {
+      "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-print-breakpoint",
+      "valueCode": "md"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "name",
+      "type": "group",
+      "text": "Your name",
+      "item": [
+        {
+          "linkId": "given-name",
+          "type": "string",
+          "text": "Given name",
+          "extension": [
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-column",
+              "extension": [
+                { "url": "breakpoint", "valueCode": "md" },
+                { "url": "span", "valuePositiveInt": 6 }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "family-name",
+          "type": "string",
+          "text": "Family name",
+          "extension": [
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-column",
+              "extension": [
+                { "url": "breakpoint", "valueCode": "md" },
+                { "url": "span", "valuePositiveInt": 6 }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "title",
+          "type": "string",
+          "text": "Title",
+          "extension": [
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-row-break",
+              "valueBoolean": true
+            },
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-column",
+              "extension": [
+                { "url": "breakpoint", "valueCode": "sm" },
+                { "url": "span", "valuePositiveInt": 4 }
+              ]
+            },
+            {
+              "url": "http://example.org/fhir/qb/StructureDefinition/qb-layout-column",
+              "extension": [
+                { "url": "breakpoint", "valueCode": "lg" },
+                { "url": "span", "valuePositiveInt": 3 },
+                { "url": "offset", "valueUnsignedInt": 3 }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

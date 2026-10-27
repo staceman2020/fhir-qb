@@ -1,0 +1,32 @@
+{
+  "name": "@qb/core",
+  "version": "0.0.0",
+  "description": "Headless FHIR R4/SDC Questionnaire engine (no React, no DOM).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -b"
+  },
+  "dependencies": {
+    "@qb/extensions": "workspace:*",
+    "@types/fhir": "^0.0.44"
+  },
+  "devDependencies": {
+    "@qb/test-fixtures": "workspace:*"
+  }
+}

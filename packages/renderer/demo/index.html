@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="en-NZ">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>qb renderer demo</title>
+    <link rel="stylesheet" href="./demo.css" />
+  </head>
+  <body>
+    <header>
+      <h1>qb renderer demo</h1>
+      <p>
+        A <code>&lt;qb-questionnaire&gt;</code> Web Component on a plain HTML page. Resize the
+        container to see the 12-column layout respond to container width rather than the viewport.
+      </p>
+    </header>
+    <main>
+      <div class="controls">
+        <label for="fixture">Questionnaire</label>
+        <select id="fixture"></select>
+        <label for="width">Container width: <output id="width-out" for="width"></output></label>
+        <input id="width" type="range" min="320" max="1400" step="10" value="900" />
+        <label
+          ><input id="protected" type="checkbox" /> Show disabled items as "not applicable"</label
+        >
+        <label><input id="readonly" type="checkbox" /> Read-only</label>
+      </div>
+      <div class="layout">
+        <section class="form-panel" aria-label="Form">
+          <qb-questionnaire id="form"></qb-questionnaire>
+        </section>
+        <section class="output-panel" aria-labelledby="output-heading">
+          <h2 id="output-heading">QuestionnaireResponse</h2>
+          <p id="status" role="status"></p>
+          <pre id="output" tabindex="0"></pre>
+        </section>
+      </div>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

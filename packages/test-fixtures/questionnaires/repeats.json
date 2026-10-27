@@ -1,0 +1,32 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "repeats",
+  "url": "http://example.org/fhir/qb/Questionnaire/repeats",
+  "status": "draft",
+  "title": "Household members",
+  "item": [
+    { "linkId": "nicknames", "type": "string", "text": "Nicknames", "repeats": true },
+    {
+      "linkId": "member",
+      "type": "group",
+      "text": "Household member",
+      "repeats": true,
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-maxOccurs",
+          "valueInteger": 6
+        }
+      ],
+      "item": [
+        { "linkId": "member-name", "type": "string", "text": "Name", "required": true },
+        { "linkId": "member-child", "type": "boolean", "text": "Under 18?" },
+        {
+          "linkId": "member-school",
+          "type": "string",
+          "text": "School",
+          "enableWhen": [{ "question": "member-child", "operator": "=", "answerBoolean": true }]
+        }
+      ]
+    }
+  ]
+}
