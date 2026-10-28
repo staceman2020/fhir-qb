@@ -11,6 +11,7 @@ import { exportJson, fileNameFor } from '../model/io.js';
 import { useEditorState, useStore } from '../state/hooks.js';
 import { Tabs } from '../components/Tabs.js';
 import { useEditor } from './actions-context.js';
+import { PdfPreview } from './PdfPreview.js';
 
 /** Simulated container widths: comfortably inside each breakpoint (plan §9.1 breakpoint simulator). */
 const SIM_WIDTH: Record<Breakpoint, number> = { xs: 360, sm: 560, md: 820, lg: 1100, xl: 1340 };
@@ -277,6 +278,7 @@ export function PreviewPane({ open, onToggle }: { open: boolean; onToggle: () =>
         </pre>
       ),
     },
+    { id: 'pdf', label: 'PDF', content: () => <PdfPreview /> },
     {
       id: 'issues',
       label: `Issues (${issues.length})`,

@@ -4,11 +4,14 @@
  */
 import { setFhirPathLoader, type FhirPathModules } from '@qb/core';
 import { defineQbQuestionnaire } from './element.js';
+import { setPdfLoader } from './pdf.js';
 
 const src = (document.currentScript as HTMLScriptElement | null)?.src;
 if (src) {
   const url = new URL('qb-fhirpath.js', src).href;
   setFhirPathLoader(() => import(/* @vite-ignore */ url) as Promise<FhirPathModules>);
+  const pdfUrl = new URL('qb-pdf.js', src).href;
+  setPdfLoader(() => import(/* @vite-ignore */ pdfUrl));
 }
 
 defineQbQuestionnaire();

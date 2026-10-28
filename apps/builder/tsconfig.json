@@ -9,9 +9,20 @@
   "include": ["src"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"],
   "references": [
-    { "path": "../../packages/core" },
-    { "path": "../../packages/extensions" },
-    { "path": "../../packages/renderer" },
-    { "path": "../../packages/test-fixtures" }
+    {
+      "path": "../../packages/core"
+    },
+    {
+      "path": "../../packages/extensions"
+    },
+    {
+      "path": "../../packages/renderer"
+    },
+    {
+      "path": "../../packages/test-fixtures"
+    },
+    {
+      "path": "../../packages/pdf"
+    }
   ]
 }

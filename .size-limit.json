@@ -1,7 +1,12 @@
 [
   {
     "name": "qb-questionnaire ESM (incl. React, excl. lazy chunks)",
-    "path": ["packages/renderer/dist/qb-questionnaire.js", "packages/renderer/dist/element-*.js"],
+    "path": [
+      "packages/renderer/dist/qb-questionnaire.js",
+      "packages/renderer/dist/element-*.js",
+      "packages/renderer/dist/engine-*.js",
+      "packages/renderer/dist/rolldown-runtime-*.js"
+    ],
     "limit": "110 KB",
     "gzip": true
   },
@@ -15,6 +20,18 @@
     "name": "FHIRPath lazy chunk (fhirpath.js + R4 model; third-party, report only, +10% alert)",
     "path": ["packages/renderer/dist/fhirpath-*.js", "packages/renderer/dist/r4-*.js"],
     "limit": "252 KB",
+    "gzip": true
+  },
+  {
+    "name": "@qb/pdf lazy chunk incl. PDFKit, excl. fonts",
+    "path": ["packages/renderer/dist/pdf-*.js"],
+    "limit": "250 KB",
+    "gzip": true
+  },
+  {
+    "name": "PDF font subsets (Noto Sans Regular + Bold)",
+    "path": ["packages/renderer/dist/fonts-data-*.js"],
+    "limit": "120 KB",
     "gzip": true
   },
   {

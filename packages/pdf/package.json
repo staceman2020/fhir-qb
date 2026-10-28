@@ -1,0 +1,40 @@
+{
+  "name": "@qb/pdf",
+  "version": "0.0.0",
+  "description": "Client-side PDF converter for FHIR Questionnaires (blank or pre-filled, tagged).",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "publishConfig": {
+    "exports": {
+      ".": {
+        "types": "./dist/types/index.d.ts",
+        "default": "./dist/index.js"
+      }
+    }
+  },
+  "files": [
+    "dist",
+    "fonts"
+  ],
+  "scripts": {
+    "build": "vite build && tsc -b",
+    "fonts": "node scripts/subset-fonts.mjs"
+  },
+  "dependencies": {
+    "@qb/core": "workspace:*",
+    "@qb/extensions": "workspace:*",
+    "@types/fhir": "^0.0.44",
+    "pdfkit": "0.20.2"
+  },
+  "devDependencies": {
+    "@expo-google-fonts/noto-sans": "0.4.2",
+    "@qb/test-fixtures": "workspace:*",
+    "@types/pdfkit": "^0.17.7",
+    "pdfjs-dist": "6.4.299",
+    "subset-font": "2.9.0"
+  }
+}

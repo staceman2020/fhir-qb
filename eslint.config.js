@@ -97,6 +97,7 @@ export default tseslint.config(
       '**/vite.config.ts',
       '**/vitest.config.ts',
       'eslint.config.js',
+      '**/scripts/**/*.mjs',
     ],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },

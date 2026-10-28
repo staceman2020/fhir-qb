@@ -3,7 +3,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import type { Bundle, FhirResource, Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import {
   LruCache,
-  NotImplementedError,
+  resolveTerminologyServer,
   TerminologyClient,
   createFormEngine,
   type FetchLike,
@@ -14,6 +14,16 @@ import {
 } from '@qb/core';
 import { QuestionnaireForm, type QuestionnaireFormHandle } from './components/QuestionnaireForm.js';
 import { buildStyles } from './styles.js';
+import { isBreakpoint } from '@qb/extensions';
+import { loadPdf } from './pdf.js';
+
+export interface ExportPdfOptions {
+  /** Print the current answers (pre-filled) instead of a blank form. */
+  prefilled?: boolean;
+  pageSize?: 'A4' | 'Letter';
+  /** Large print, 1–2. */
+  fontScale?: number;
+}
 
 let sharedSheet: CSSStyleSheet | undefined;
 
@@ -176,8 +186,35 @@ export class QbQuestionnaireElement extends HTMLElement {
       : Promise.reject(new Error('No questionnaire loaded'));
   }
 
-  exportPdf(_opts?: unknown): Promise<Blob> {
-    return Promise.reject(new NotImplementedError('PDF export (plan §8, Phase 5)'));
+  /**
+   * Printable PDF (plan §8): blank by default, or pre-filled with the current answers. Loads the
+   * PDF converter on first use. External value sets with up to 30 codes print as options.
+   */
+  async exportPdf(opts: ExportPdfOptions = {}): Promise<Blob> {
+    const engine = this.#engine;
+    if (!engine) throw new Error('No questionnaire loaded');
+    const { generatePdf } = await loadPdf();
+    const client = this.#client();
+    const bp = this.getAttribute('print-breakpoint');
+    const bytes = await generatePdf(engine.questionnaire, {
+      ...(opts.prefilled ? { response: engine.getResponse() } : {}),
+      ...(this.launchContext ? { launchContext: this.launchContext } : {}),
+      locale: this.lang || engine.questionnaire.language,
+      pageSize: opts.pageSize ?? 'A4',
+      fontScale: opts.fontScale ?? 1,
+      ...(isBreakpoint(bp) ? { printBreakpoint: bp } : {}),
+      resolveValueSet: async (url, item) => {
+        const server = resolveTerminologyServer(
+          engine.definitions,
+          item.linkId,
+          engine.options.terminology,
+        );
+        if (!client || !server) return undefined;
+        const r = await client.expand(server, url, { count: 31 });
+        return (r.total ?? r.codings.length) > 30 ? undefined : r.codings;
+      },
+    });
+    return new Blob([bytes as BlobPart], { type: 'application/pdf' });
   }
 
   reset() {

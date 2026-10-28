@@ -14,7 +14,7 @@
 </script>
 ```
 
-Deploy the whole `renderer/v0/` folder, not just the IIFE file: forms with FHIRPath expressions load `qb-fhirpath.js` (about 225 KB gzipped) from the same folder on demand. Load the IIFE with a normal `<script src>` tag, because the folder is located from `document.currentScript`.
+Deploy the whole `renderer/v0/` folder, not just the IIFE file: forms with FHIRPath expressions load `qb-fhirpath.js` (about 225 KB gzipped), and `exportPdf()` loads `qb-pdf.js` (about 320 KB gzipped with fonts), from the same folder on demand. Load the IIFE with a normal `<script src>` tag, because the folder is located from `document.currentScript`.
 
 ESM hosts: `import '@qb/renderer/define';`. Use `defineQbQuestionnaire('acme-form')` from `@qb/renderer` when the tag name must follow host naming rules.
 
@@ -60,3 +60,12 @@ import { registerMessages } from '@qb/core';
 registerStrings('mi', { next: 'Panuku', previous: 'Hoki' });
 registerMessages('mi', { required: ({ label }) => `…${label}…` });
 ```
+
+## Printing
+
+```js
+const blob = await form.exportPdf({ prefilled: true });
+window.open(URL.createObjectURL(blob));
+```
+
+The PDF uses the `print-breakpoint` attribute (or the form's `qb-layout-print-breakpoint`, default `md`) for its column layout. Value sets with more than 30 codes print as a write-in line naming the list.

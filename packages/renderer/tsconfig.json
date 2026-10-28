@@ -8,5 +8,15 @@
   },
   "include": ["src"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"],
-  "references": [{ "path": "../core" }, { "path": "../extensions" }]
+  "references": [
+    {
+      "path": "../core"
+    },
+    {
+      "path": "../extensions"
+    },
+    {
+      "path": "../pdf"
+    }
+  ]
 }

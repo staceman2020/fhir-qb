@@ -1,5 +1,6 @@
 import type { QuestionnaireItem } from 'fhir/r4';
-import { getExtension, getSubExtension } from './ext.js';
+import type { Extension } from 'fhir/r4';
+import { getExtension, getSubExtension, replaceExtensions } from './ext.js';
 import { QB_EXT } from './urls.js';
 
 export type AnswerSpaceStyle = 'lines' | 'box' | 'comb' | 'none';
@@ -64,4 +65,46 @@ export function getPdfConditionNote(item: QuestionnaireItem): { text: string } |
   if (ext.valueBoolean === false) return false;
   if (typeof ext.valueMarkdown === 'string') return { text: ext.valueMarkdown };
   return undefined;
+}
+
+/** Writes (or removes, when empty/undefined) `qb-pdf-answer-space` (immutable). */
+export function setPdfAnswerSpace(
+  item: QuestionnaireItem,
+  space: PdfAnswerSpace | undefined,
+): QuestionnaireItem {
+  const subs: Extension[] = [];
+  if (space?.style) subs.push({ url: 'style', valueCode: space.style });
+  if (space?.lines !== undefined) subs.push({ url: 'lines', valuePositiveInt: space.lines });
+  if (space?.heightMm !== undefined)
+    subs.push({
+      url: 'height',
+      valueQuantity: {
+        value: space.heightMm,
+        unit: 'mm',
+        system: 'http://unitsofmeasure.org',
+        code: 'mm',
+      },
+    });
+  if (space?.combCount !== undefined)
+    subs.push({ url: 'combCount', valuePositiveInt: space.combCount });
+  if (space?.choiceStyle) subs.push({ url: 'choiceStyle', valueCode: space.choiceStyle });
+  return replaceExtensions(
+    item,
+    QB_EXT.pdfAnswerSpace,
+    subs.length ? [{ url: QB_EXT.pdfAnswerSpace, extension: subs }] : [],
+  );
+}
+
+/** `{ text }` custom note, `false` to suppress, undefined for the automatic note. */
+export function setPdfConditionNote(
+  item: QuestionnaireItem,
+  note: { text: string } | false | undefined,
+): QuestionnaireItem {
+  const ext: Extension[] =
+    note === false
+      ? [{ url: QB_EXT.pdfConditionNote, valueBoolean: false }]
+      : note
+        ? [{ url: QB_EXT.pdfConditionNote, valueMarkdown: note.text }]
+        : [];
+  return replaceExtensions(item, QB_EXT.pdfConditionNote, ext);
 }

@@ -26,7 +26,7 @@ export default defineConfig(({ mode }) => {
       build: {
         emptyOutDir: false,
         // fhirpath.js stays out of the single file; define-iife.ts loads qb-fhirpath.js at runtime.
-        rolldownOptions: { external: ['fhirpath', 'fhirpath/fhir-context/r4'] },
+        rolldownOptions: { external: ['fhirpath', 'fhirpath/fhir-context/r4', '@qb/pdf'] },
         lib: {
           entry: resolve(import.meta.dirname, 'src/define-iife.ts'),
           name: 'QbQuestionnaire',
@@ -42,12 +42,22 @@ export default defineConfig(({ mode }) => {
     build: {
       // Vite keeps ES library output unminified by default; this bundle ships React, so minify it.
       minify: true,
-      rolldownOptions: { output: { minify: true } },
+      rolldownOptions: {
+        output: {
+          minify: true,
+          // Name the lazy PDF converter chunk (otherwise it is called after its entry file, "src").
+          chunkFileNames: (chunk) =>
+            chunk.moduleIds.some((id) => id.includes('/pdfkit/'))
+              ? 'pdf-[hash].js'
+              : '[name]-[hash].js',
+        },
+      },
       lib: {
         entry: {
           'qb-questionnaire': resolve(import.meta.dirname, 'src/define.ts'),
           index: resolve(import.meta.dirname, 'src/index.ts'),
           'qb-fhirpath': resolve(import.meta.dirname, 'src/fhirpath-entry.ts'),
+          'qb-pdf': resolve(import.meta.dirname, 'src/pdf-entry.ts'),
         },
         formats: ['es'],
         fileName: (_format, name) => `${name}.js`,

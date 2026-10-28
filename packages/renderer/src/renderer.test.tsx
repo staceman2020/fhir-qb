@@ -343,6 +343,20 @@ describe('<qb-questionnaire>', () => {
     el.remove();
   });
 
+  it('exports a blank or pre-filled PDF', async () => {
+    const el = await mount(fixtures.enableWhen());
+    el.engine!.setAnswer('smoker[0]', [{ valueBoolean: true }]);
+    el.engine!.setAnswer('per-day[0]', [{ valueInteger: 12 }]);
+    const blank = await el.exportPdf();
+    expect(blank.type).toBe('application/pdf');
+    const head = new TextDecoder().decode(new Uint8Array(await blank.arrayBuffer()).slice(0, 8));
+    expect(head).toBe('%PDF-1.7');
+    const filled = await el.exportPdf({ prefilled: true, pageSize: 'Letter' });
+    expect(filled.size).toBeGreaterThan(0);
+    expect(filled.size).not.toBe(blank.size);
+    el.remove();
+  }, 20000);
+
   it('resumes from questionnaireResponse and reflects attributes', async () => {
     const el = document.createElement('qb-questionnaire');
     el.questionnaireResponse = {
@@ -368,7 +382,7 @@ describe('<qb-questionnaire>', () => {
     el.remove();
   });
 
-  it('reports invalid input via qb-error and rejects PDF export for now', async () => {
+  it('reports invalid input via qb-error; PDF export needs a questionnaire', async () => {
     const el = document.createElement('qb-questionnaire');
     document.body.append(el);
     const error = new Promise<CustomEvent>((r) =>
@@ -378,7 +392,7 @@ describe('<qb-questionnaire>', () => {
       el.questionnaire = { resourceType: 'Patient' } as unknown as Questionnaire;
     });
     expect(((await error).detail.error as Error).name).toBe('TypeError');
-    await expect(el.exportPdf()).rejects.toThrow(/Phase 5/);
+    await expect(el.exportPdf()).rejects.toThrow('No questionnaire loaded');
     el.remove();
   });
 });

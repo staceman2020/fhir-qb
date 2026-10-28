@@ -32,3 +32,29 @@ jobs:
           node-version: 24
       - name: SUSHI build
         run: npx --yes fsh-sushi@3 ig
+
+  pdf-ua:
+    # Plan §8.6: fixture PDFs are validated against PDF/UA-1 with veraPDF; failures block the build.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Generate fixture PDFs
+        run: QB_PDF_OUT="$PWD/pdf-out" pnpm vitest run --project pdf
+      - name: veraPDF (PDF/UA-1)
+        # TODO: pin the image to a specific veraPDF release tag.
+        run: |
+          docker run --rm -v "$PWD/pdf-out:/data" verapdf/cli:latest --flavour ua1 --format text /data | tee verapdf.txt
+          if grep -q '^FAIL' verapdf.txt; then echo "veraPDF reported PDF/UA failures"; exit 1; fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pdf-ua-report
+          path: |
+            verapdf.txt
+            pdf-out/

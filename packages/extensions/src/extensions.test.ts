@@ -11,6 +11,8 @@ import {
   STD_EXT,
   getPdfAnswerSpace,
   getPdfConditionNote,
+  setPdfAnswerSpace,
+  setPdfConditionNote,
   getRenderChannel,
   isShownInChannel,
   resolveLayout,
@@ -133,6 +135,21 @@ describe('pdf accessors', () => {
     ]);
     expect(getPdfAnswerSpace(it2)).toEqual({ style: 'comb', combCount: 7, heightMm: 20 });
     expect(getPdfConditionNote(it2)).toBe(false);
+  });
+});
+
+describe('pdf setters', () => {
+  it('round-trips answer space and condition note', () => {
+    const it2 = setPdfAnswerSpace(item(undefined), { style: 'box', heightMm: 25 });
+    expect(getPdfAnswerSpace(it2)).toEqual({ style: 'box', heightMm: 25 });
+    expect(setPdfAnswerSpace(it2, undefined).extension).toBeUndefined();
+    expect(
+      getPdfConditionNote(setPdfConditionNote(item(undefined), { text: 'Adults only' })),
+    ).toEqual({ text: 'Adults only' });
+    expect(getPdfConditionNote(setPdfConditionNote(item(undefined), false))).toBe(false);
+    expect(
+      setPdfConditionNote(setPdfConditionNote(item(undefined), false), undefined).extension,
+    ).toBeUndefined();
   });
 });
 

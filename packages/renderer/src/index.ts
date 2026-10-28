@@ -3,7 +3,8 @@ export {
   type QuestionnaireFormHandle,
   type QuestionnaireFormProps,
 } from './components/QuestionnaireForm.js';
-export { QbQuestionnaireElement, defineQbQuestionnaire } from './element.js';
+export { QbQuestionnaireElement, defineQbQuestionnaire, type ExportPdfOptions } from './element.js';
+export { setPdfLoader } from './pdf.js';
 export { buildStyles } from './styles.js';
 export { sanitizeXhtml } from './sanitize.js';
 export { DEFAULT_STRINGS, type Strings } from './strings.js';

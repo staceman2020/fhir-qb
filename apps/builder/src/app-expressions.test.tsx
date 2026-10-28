@@ -289,6 +289,65 @@ describe('Advanced rendering settings', () => {
   });
 });
 
+describe('PDF in the builder', () => {
+  it('edits print settings and generates a PDF preview', async () => {
+    const q = scored();
+    q.item!.push({
+      linkId: 'notes',
+      type: 'text',
+      text: 'Notes',
+      repeats: true,
+      enableWhen: [{ question: 'q1', operator: 'exists', answerBoolean: true }],
+    });
+    const { id, user } = await open(q);
+    await user.click(within(screen.getByRole('tree')).getByRole('treeitem', { name: /Notes/ }));
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Item settings' })).getByRole('tab', {
+        name: 'PDF',
+      }),
+    );
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Space to write the answer' }),
+      'Open box',
+    );
+    await user.type(screen.getByRole('textbox', { name: 'Box height (mm)' }), '40');
+    await user.type(screen.getByRole('textbox', { name: 'Blank copies to print' }), '2');
+    await user.click(screen.getByRole('radio', { name: 'Use my own wording' }));
+    const noteField = screen.getByRole('textbox', { name: 'Note text' });
+    await user.clear(noteField);
+    await user.type(noteField, 'Only if you answered question 1.');
+    const saved1 = (await saved(id)).item!.find((i) => i.linkId === 'notes')!;
+    expect(
+      getExtension(
+        saved1,
+        'http://example.org/fhir/qb/StructureDefinition/qb-pdf-answer-space',
+      )?.extension?.map((e) => e.valueCode ?? e.valueQuantity?.value),
+    ).toEqual(['box', 40]);
+    expect(
+      getExtension(saved1, 'http://example.org/fhir/qb/StructureDefinition/qb-pdf-blank-repeats')
+        ?.valuePositiveInt,
+    ).toBe(2);
+    expect(
+      getExtension(saved1, 'http://example.org/fhir/qb/StructureDefinition/qb-pdf-condition-note')
+        ?.valueMarkdown,
+    ).toBe('Only if you answered question 1.');
+
+    const preview = screen.getByRole('tablist', { name: 'Preview' });
+    await user.click(within(preview).getByRole('tab', { name: 'PDF' }));
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Text size' }),
+      'Large print (150%)',
+    );
+    await user.click(screen.getByRole('button', { name: 'Generate PDF' }));
+    const frame = await screen.findByTitle('PDF preview', {}, { timeout: 15000 });
+    expect(frame.getAttribute('src')).toMatch(/^blob:/);
+    expect(screen.getByRole('link', { name: 'Download PDF' }).getAttribute('download')).toBe(
+      'Mood.pdf',
+    );
+    expect(screen.getByRole('button', { name: 'Regenerate PDF' })).toBeTruthy();
+  }, 30000);
+});
+
 describe('Terminology in the builder', () => {
   it('searches codes on the configured server and adds them to the item', async () => {
     await repo.setSetting(SETTINGS.terminologyServer, 'https://tx.example.org/fhir');

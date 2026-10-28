@@ -23,7 +23,8 @@
     "dexie-react-hooks": "^4.4.0",
     "immer": "^11.2.9",
     "react": "^19.3.1",
-    "react-dom": "^19.3.1"
+    "react-dom": "^19.3.1",
+    "@qb/pdf": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/dom": "^10.4.2",

@@ -8,6 +8,7 @@ Working name (see [plan.md](plan.md) §1 and open decision #1). An embeddable to
 | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`@qb/core`](packages/core)                   | Headless engine (no React, no DOM): definition index, instance tree, enableWhen, response building and resume, validation, structural lint. |
 | [`@qb/extensions`](packages/extensions)       | URLs, typed accessors and validators for the `qb-*` extensions.                                                                             |
+| [`@qb/pdf`](packages/pdf)                     | Client-side PDF converter (blank or pre-filled, tagged) built on PDFKit.                                                                    |
 | [`@qb/renderer`](packages/renderer)           | `<qb-questionnaire>` Web Component (Shadow DOM, React inside) and React components.                                                         |
 | [`@qb/test-fixtures`](packages/test-fixtures) | Shared Questionnaire fixtures and a 1,000-item stress generator.                                                                            |
 | [`ig/`](ig)                                   | FSH sources for the extension IG (SUSHI).                                                                                                   |
@@ -28,6 +29,6 @@ pnpm ig:build      # SUSHI build of the IG
 
 ## Status
 
-Phases 0–4 are done: foundations, the core engine and renderer, the builder MVP, expressions and terminology, and advanced rendering. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
+Phases 0–5 are done: foundations, the core engine and renderer, the builder MVP, expressions and terminology, advanced rendering, and the PDF converter. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
 
-Licence: Apache-2.0 (open decision #7).
+Licence: Apache-2.0 (open decision #7). The embedded Noto Sans fonts are under the SIL Open Font License (`packages/pdf/fonts/OFL.txt`).

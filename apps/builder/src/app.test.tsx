@@ -223,7 +223,11 @@ describe('Editor', () => {
     await user.click(screen.getByRole('tab', { name: 'Layout' }));
     await user.selectOptions(screen.getByRole('combobox', { name: 'Columns at md' }), '6');
     await user.selectOptions(screen.getByRole('combobox', { name: 'Offset at md' }), '3');
-    await user.click(screen.getByRole('tab', { name: 'PDF' }));
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Item settings' })).getByRole('tab', {
+        name: 'PDF',
+      }),
+    );
     await user.click(screen.getByRole('radio', { name: /Web only/ }));
     expect(within(screen.getByRole('tree')).getAllByRole('treeitem')[0]!.textContent).toContain(
       'WEB',
@@ -245,7 +249,11 @@ describe('Editor', () => {
   it('adds a PDF-only instruction with the degradation flag', async () => {
     const { id, user } = await openEditor();
     await user.click(within(screen.getByRole('tree')).getAllByRole('treeitem')[0]!);
-    await user.click(screen.getByRole('tab', { name: 'PDF' }));
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Item settings' })).getByRole('tab', {
+        name: 'PDF',
+      }),
+    );
     await user.click(screen.getByRole('button', { name: 'Add PDF-only instruction' }));
     expect(
       screen.getByRole('heading', { level: 2, name: /Display text\s+smoker-pdf-1/ }),

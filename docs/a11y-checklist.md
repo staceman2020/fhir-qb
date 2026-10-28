@@ -47,4 +47,14 @@ Automated: axe-core in Vitest browser mode for every fixture × breakpoint (to b
 - [ ] The slider is a native range input (keyboard-operable, 2.5.7). Its value and "Not answered" state are announced via `aria-valuetext`, with a Clear button.
 - [ ] Support links state that they open in a new tab.
 - [ ] Focus not obscured by sticky header/footer (2.4.11) once header/footer controls exist (Phase 4).
-- [ ] PDF/UA verification with veraPDF (Phase 5).
+- [ ] veraPDF PDF/UA-1 passes for the fixture PDFs (CI job `pdf-ua`); review any failures it reports.
+
+## PDF (verify with a screen reader in Acrobat/NVDA and with veraPDF)
+
+- [ ] Title shown in the window title bar (DisplayDocTitle); document language set.
+- [ ] Reading order follows the form: headings (H1 title, H2+ sections), questions, options as lists, tables with header cells.
+- [ ] Answer lines, boxes and page headers/footers are artifacts (not read aloud).
+- [ ] Pre-filled option marks are announced as "Selected" / "Not selected".
+- [ ] Text copies and extracts exactly (no ligatures), including macrons (ā ē ī ō ū).
+- [ ] Bookmarks for each top-level section.
+- [ ] Body text is at least 11 pt; large print scales to 2×; tick boxes are at least 5 mm; meaning never relies on colour.
