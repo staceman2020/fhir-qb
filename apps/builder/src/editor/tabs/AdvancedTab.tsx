@@ -7,7 +7,13 @@ import {
   setSimpleExtension,
 } from '../../model/items.js';
 import { useEditor } from '../actions-context.js';
-import { Checkbox, NumberField, SelectField, TextField } from '../../components/fields.js';
+import {
+  Checkbox,
+  LinesField,
+  NumberField,
+  SelectField,
+  TextField,
+} from '../../components/fields.js';
 
 /** Extensions edited on this tab or elsewhere in the builder; anything else is counted as "other". */
 const KNOWN = new Set<string>([...Object.values(STD_EXT)]);
@@ -187,6 +193,59 @@ export function AdvancedTab({ item }: { item: QuestionnaireItem }) {
             }
           />
         </>
+      )}
+      {(getItemControl(item) === 'slider' || getItemControl(item) === 'spinner') && (
+        <NumberField
+          label="Step"
+          hint="How much each slider or spinner step changes the value."
+          integer={item.type === 'integer'}
+          min={0}
+          value={
+            ext(STD_EXT.sliderStepValue)?.valueInteger ?? ext(STD_EXT.sliderStepValue)?.valueDecimal
+          }
+          onChange={(v) =>
+            setExt(
+              STD_EXT.sliderStepValue,
+              item.type === 'integer' ? 'valueInteger' : 'valueDecimal',
+              v,
+            )
+          }
+        />
+      )}
+      {item.type === 'group' && (
+        <SelectField
+          label="Collapsible"
+          hint="Let people show and hide the group's contents."
+          value={ext(STD_EXT.collapsible)?.valueCode ?? ''}
+          options={[
+            { value: '', label: 'Not collapsible' },
+            { value: 'default-open', label: 'Collapsible, open at first' },
+            { value: 'default-closed', label: 'Collapsible, closed at first' },
+          ]}
+          onChange={(v) => setExt(STD_EXT.collapsible, 'valueCode', v || undefined)}
+        />
+      )}
+      {item.type !== 'display' && (
+        <LinesField
+          label="More information links"
+          hint="Web addresses (https://…), one per line. Shown as 'More information' links that open in a new tab."
+          values={(item.extension ?? [])
+            .filter((e) => e.url === STD_EXT.supportLink)
+            .map((e) => e.valueUri ?? '')}
+          onChange={(values) =>
+            update((i) => {
+              const kept = (i.extension ?? []).filter((e) => e.url !== STD_EXT.supportLink);
+              const all = [
+                ...kept,
+                ...values.map((valueUri) => ({ url: STD_EXT.supportLink, valueUri })),
+              ];
+              const n = { ...i };
+              if (all.length) n.extension = all;
+              else delete n.extension;
+              return n;
+            }, 'supportLink')
+          }
+        />
       )}
       <Checkbox
         label="Hidden"

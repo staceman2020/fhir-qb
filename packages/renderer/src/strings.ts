@@ -33,5 +33,36 @@ export const DEFAULT_STRINGS = {
   selectedAnswers: (label: string) => `Selected answers for ${label}`,
   calculatedUpdated: (label: string, value: string) =>
     value ? `${label} updated to ${value}` : `${label} cleared`,
+  helpFor: (label: string) => `Help with ${label}`,
+  moreInfoFor: (label: string) => `More information about ${label}`,
+  moreInformation: 'More information',
+  pageOf: (i: number, n: number) => `Page ${i} of ${n}`,
+  previous: 'Previous',
+  next: 'Next',
+  row: (n: number) => `Row ${n}`,
+  rowHeader: 'Row',
+  actions: 'Actions',
+  addRow: (label: string) => `Add a row to ${label.toLowerCase()}`,
+  removeRow: (n: number) => `Remove row ${n}`,
+  notAnswered: 'Not answered',
+  clearAnswer: 'Clear answer',
+  problems: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
+  opensInNewTab: '(opens in a new tab)',
+  aboutLabel: (label: string) => `about ${label}`,
 };
 export type Strings = typeof DEFAULT_STRINGS;
+
+const catalogs = new Map<string, Partial<Strings>>();
+
+/** Registers (or extends) UI strings for a locale, e.g. `registerStrings('mi', { next: 'Panuku' })`. */
+export function registerStrings(locale: string, strings: Partial<Strings>) {
+  const key = locale.toLowerCase();
+  catalogs.set(key, { ...catalogs.get(key), ...strings });
+}
+
+/** UI strings for a locale: most specific registered catalog first, then the en-NZ defaults. */
+export function stringsFor(locale: string | undefined): Strings {
+  const parts = (locale ?? '').toLowerCase().split('-').filter(Boolean);
+  const chain = parts.map((_, i) => parts.slice(0, i + 1).join('-'));
+  return Object.assign({}, DEFAULT_STRINGS, ...chain.map((t) => catalogs.get(t) ?? {})) as Strings;
+}

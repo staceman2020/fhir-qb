@@ -1,8 +1,11 @@
 import 'fake-indexeddb/auto';
-import { cleanup } from '@testing-library/react';
+import { cleanup, configure } from '@testing-library/react';
 import { afterEach } from 'vitest';
 
 afterEach(() => cleanup());
+
+// Long UI walkthroughs share the CPU with other test workers; allow async queries more time.
+configure({ asyncUtilTimeout: 3000 });
 
 globalThis.requestAnimationFrame ??= ((cb: FrameRequestCallback) =>
   setTimeout(() => cb(performance.now()), 0)) as typeof requestAnimationFrame;

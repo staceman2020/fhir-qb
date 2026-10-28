@@ -3,7 +3,7 @@ import type { QuestionnaireItem } from 'fhir/r4';
 import { itemControl, type AnswerValue, type ItemNode } from '@qb/core';
 import { STD_EXT, getExtension, isShownInChannel } from '@qb/extensions';
 import { useQb } from '../context.js';
-import { useEnabled, useIssues } from '../hooks.js';
+import { useIssues } from '../hooks.js';
 import { useValueSetExpansion } from '../terminology.js';
 import {
   BooleanControl,
@@ -12,8 +12,15 @@ import {
   SingleControl,
   choiceControlKind,
 } from './controls.js';
-import { ItemText, RichText, plainLabel } from './ItemText.js';
+import { ItemText, plainLabel } from './ItemText.js';
 import { ItemList } from './ItemList.js';
+import {
+  HelpPopup,
+  Hints,
+  SupportLinks,
+  useDisplayChildren,
+  useDisplayPlainText,
+} from './support.js';
 
 export function useRegisterField(path: string, id: string) {
   const { fieldIds } = useQb();
@@ -23,18 +30,6 @@ export function useRegisterField(path: string, id: string) {
       if (fieldIds.get(path) === id) fieldIds.delete(path);
     };
   }, [fieldIds, path, id]);
-}
-
-function Hint({ node, id }: { node: ItemNode; id: string }) {
-  const { engine } = useQb();
-  const enabled = useEnabled(engine, node.path);
-  const item = engine.definitions.byLinkId.get(node.linkId)!.item;
-  if (!enabled) return null;
-  return (
-    <div className="qb-hint" id={id} part="help">
-      <RichText text={item.text} element={item._text} />
-    </div>
-  );
 }
 
 /** Whether the control is a set of inputs labelled by a fieldset legend rather than a single <label>. */
@@ -67,7 +62,8 @@ export function QuestionView({
     const it = defs.get(n.linkId)?.item;
     return it !== undefined && isShownInChannel(it, 'web');
   });
-  const hints = shownChildren.filter((n) => defs.get(n.linkId)?.item.type === 'display');
+  const display = useDisplayChildren(node);
+  const hintNodes = [...display.prompt, ...display.hint, ...display.legal];
   const nested = shownChildren.filter((n) => defs.get(n.linkId)?.item.type !== 'display');
   const entryFormat = getExtension(item, STD_EXT.entryFormat)?.valueString;
 
@@ -107,26 +103,48 @@ export function QuestionView({
   const fieldset = usesFieldset(item, optionCount) && !searchValueSet && !optionsMessage;
   const ownLabel = item.type === 'boolean' && itemControl(item) === 'check-box';
 
-  const hintIds = hints.map((_, i) => `${id}-hint-${i}`);
+  const hintIds = hintNodes.map((_, i) => `${id}-hint-${i}`);
   if (entryFormat) hintIds.push(`${id}-format`);
   const describedBy = [...hintIds, ...(issues.length ? [errorId] : [])].join(' ') || undefined;
   const readOnly = ctx.readOnly || item.readOnly === true || isProtected;
-  const label = plainLabel(item);
+  const label = plainLabel(item, ctx.lang);
+  const lowerLabel = useDisplayPlainText(display.lower);
+  const upperLabel = useDisplayPlainText(display.upper);
+  const helpButtons = (
+    <>
+      <HelpPopup nodes={display.popup} kind="popup" label={label} />
+      <HelpPopup nodes={display.flyover} kind="flyover" label={label} />
+    </>
+  );
   const invalid = issues.length > 0;
 
   const labelContent = (
     <>
       <ItemText item={item} />
-      {item.required && <span className="qb-required"> {strings.required}</span>}
-      {isProtected && <span className="qb-not-applicable"> — {strings.notApplicable}</span>}
+      {item.required && (
+        <>
+          {' '}
+          <span className="qb-required">{strings.required}</span>
+        </>
+      )}
+      {isProtected && (
+        <>
+          {' '}
+          <span className="qb-not-applicable">— {strings.notApplicable}</span>
+        </>
+      )}
     </>
   );
 
   const support = (
     <>
-      {hints.map((h, i) => (
-        <Hint key={h.path} node={h} id={hintIds[i]!} />
-      ))}
+      <Hints
+        hint={display.hint}
+        prompt={display.prompt}
+        legal={display.legal}
+        idFor={(n) => hintIds[hintNodes.indexOf(n)]!}
+      />
+      <SupportLinks item={item} label={label} />
       {entryFormat && (
         <div className="qb-hint" id={`${id}-format`}>
           {strings.entryFormat(entryFormat)}
@@ -141,10 +159,22 @@ export function QuestionView({
     </>
   );
 
-  const controlProps = { item, node, inputId, describedBy, invalid, readOnly, label };
+  const controlProps = {
+    item,
+    node,
+    inputId,
+    describedBy,
+    invalid,
+    readOnly,
+    label,
+    lowerLabel,
+    upperLabel,
+  };
   let control;
   if (item.type === 'boolean')
-    control = <BooleanControl {...controlProps} labelContent={labelContent} />;
+    control = (
+      <BooleanControl {...controlProps} labelContent={labelContent} afterLabel={helpButtons} />
+    );
   else if (effective)
     control = (
       <ChoiceControl
@@ -185,6 +215,7 @@ export function QuestionView({
       <fieldset className={cls} aria-describedby={describedBy} part="question">
         <legend className="qb-label" part="label">
           {labelContent}
+          {helpButtons}
         </legend>
         {body}
       </fieldset>
@@ -193,9 +224,12 @@ export function QuestionView({
   return (
     <div className={cls} part="question">
       {!ownLabel && (
-        <label className="qb-label" htmlFor={inputId} part="label">
-          {labelContent}
-        </label>
+        <div className="qb-label-row">
+          <label className="qb-label" htmlFor={inputId} part="label">
+            {labelContent}
+          </label>
+          {helpButtons}
+        </div>
       )}
       {body}
     </div>

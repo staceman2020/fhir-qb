@@ -73,6 +73,9 @@ export const STD_EXT = {
   preferredTerminologyServer: `${HL7}preferredTerminologyServer`,
   shortText: `${SDC}sdc-questionnaire-shortText`,
   unitValueSet: `${HL7}questionnaire-unitValueSet`,
+  sliderStepValue: `${HL7}questionnaire-sliderStepValue`,
+  collapsible: `${SDC}sdc-questionnaire-collapsible`,
+  translation: `${HL7}translation`,
   // Expressions (SDC behaviour, plan §6.4)
   variable: `${HL7}variable`,
   calculatedExpression: `${SDC}sdc-questionnaire-calculatedExpression`,

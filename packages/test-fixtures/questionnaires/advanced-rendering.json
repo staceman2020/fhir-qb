@@ -1,0 +1,754 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "advanced-rendering",
+  "url": "http://example.org/fhir/qb/Questionnaire/advanced-rendering",
+  "version": "1.0.0",
+  "status": "draft",
+  "title": "Advanced rendering",
+  "language": "en-NZ",
+  "description": "Exercises SDC advanced rendering: pages, header/footer, table/htable/gtable/grid, tab-container, collapsible, help/flyover/legal/prompt, slider/spinner, supportLink, rendering-markdown/style and translations.",
+  "item": [
+    {
+      "linkId": "hdr",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "header"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "hdr-text",
+          "type": "display",
+          "text": "Health check — all answers are confidential."
+        }
+      ]
+    },
+    {
+      "linkId": "p1",
+      "type": "group",
+      "text": "About you",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "name",
+          "type": "string",
+          "text": "Preferred name",
+          "required": true,
+          "_text": {
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/translation",
+                "extension": [
+                  {
+                    "url": "lang",
+                    "valueCode": "mi"
+                  },
+                  {
+                    "url": "content",
+                    "valueString": "Ingoa e pai ana ki a koe"
+                  }
+                ]
+              }
+            ]
+          },
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-supportLink",
+              "valueUri": "https://www.health.govt.nz/"
+            }
+          ],
+          "item": [
+            {
+              "linkId": "name-prompt",
+              "type": "display",
+              "text": "The name you like to be called",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "prompt"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "name-help",
+              "type": "display",
+              "text": "We use this name when we talk to you.",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "help"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "name-flyover",
+              "type": "display",
+              "text": "It does not need to match your legal name.",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "flyover"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "name-legal",
+              "type": "display",
+              "text": "Your name is stored under the Health Information Privacy Code.",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "legal"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "intro",
+          "type": "display",
+          "text": "Please answer **every** question. See [our privacy policy](https://example.org/privacy).",
+          "_text": {
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/rendering-markdown",
+                "valueMarkdown": "Please answer **every** question. See [our privacy policy](https://example.org/privacy)."
+              }
+            ]
+          }
+        },
+        {
+          "linkId": "important",
+          "type": "display",
+          "text": "Important: bring your medicines.",
+          "_text": {
+            "extension": [
+              {
+                "url": "http://hl7.org/fhir/StructureDefinition/rendering-style",
+                "valueString": "font-weight: bold; color: #b0001e; position: absolute"
+              }
+            ]
+          }
+        },
+        {
+          "linkId": "pain",
+          "type": "integer",
+          "text": "Pain today",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "slider"
+                  }
+                ]
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+              "valueInteger": 0
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+              "valueInteger": 10
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
+              "valueInteger": 1
+            }
+          ],
+          "item": [
+            {
+              "linkId": "pain-lower",
+              "type": "display",
+              "text": "No pain",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "lower"
+                      }
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "pain-upper",
+              "type": "display",
+              "text": "Worst pain",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+                  "valueCodeableConcept": {
+                    "coding": [
+                      {
+                        "system": "http://hl7.org/fhir/questionnaire-item-control",
+                        "code": "upper"
+                      }
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "temp",
+          "type": "decimal",
+          "text": "Temperature",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "spinner"
+                  }
+                ]
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+              "valueDecimal": 34
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/maxValue",
+              "valueDecimal": 43
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-sliderStepValue",
+              "valueDecimal": 0.1
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-unit",
+              "valueCoding": {
+                "system": "http://unitsofmeasure.org",
+                "code": "Cel",
+                "display": "°C"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "p2",
+      "type": "group",
+      "text": "Symptoms",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "symptoms",
+          "type": "group",
+          "text": "In the last week, how often did you have…",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "table"
+                  }
+                ]
+              }
+            }
+          ],
+          "item": [
+            {
+              "linkId": "cough",
+              "type": "choice",
+              "text": "A cough",
+              "required": true,
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "0",
+                    "display": "Never"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "1",
+                    "display": "Sometimes"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "2",
+                    "display": "Often"
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "fever",
+              "type": "choice",
+              "text": "A fever",
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "0",
+                    "display": "Never"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "1",
+                    "display": "Sometimes"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "2",
+                    "display": "Often"
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "tired",
+              "type": "choice",
+              "text": "Tiredness",
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "0",
+                    "display": "Never"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "1",
+                    "display": "Sometimes"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:freq",
+                    "code": "2",
+                    "display": "Often"
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "other-symptom",
+              "type": "string",
+              "text": "Anything else"
+            }
+          ]
+        },
+        {
+          "linkId": "travel",
+          "type": "group",
+          "text": "Recent travel",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "htable"
+                  }
+                ]
+              }
+            }
+          ],
+          "item": [
+            {
+              "linkId": "travel-overseas",
+              "type": "choice",
+              "text": "Overseas",
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:yn",
+                    "code": "y",
+                    "display": "Yes"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:yn",
+                    "code": "n",
+                    "display": "No"
+                  }
+                }
+              ]
+            },
+            {
+              "linkId": "travel-hospital",
+              "type": "choice",
+              "text": "Hospital visit",
+              "answerOption": [
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:yn",
+                    "code": "y",
+                    "display": "Yes"
+                  }
+                },
+                {
+                  "valueCoding": {
+                    "system": "urn:qb:yn",
+                    "code": "n",
+                    "display": "No"
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "p3",
+      "type": "group",
+      "text": "Medicines",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "meds",
+          "type": "group",
+          "text": "Medicines you take",
+          "repeats": true,
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "gtable"
+                  }
+                ]
+              }
+            },
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-maxOccurs",
+              "valueInteger": 5
+            }
+          ],
+          "item": [
+            {
+              "linkId": "med-name",
+              "type": "string",
+              "text": "Medicine name",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-shortText",
+                  "valueString": "Name"
+                }
+              ]
+            },
+            {
+              "linkId": "med-dose",
+              "type": "decimal",
+              "text": "Dose",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/minValue",
+                  "valueDecimal": 0
+                }
+              ]
+            },
+            {
+              "linkId": "med-freq",
+              "type": "choice",
+              "text": "How often",
+              "answerOption": [
+                {
+                  "valueString": "Daily"
+                },
+                {
+                  "valueString": "Weekly"
+                },
+                {
+                  "valueString": "As needed"
+                }
+              ]
+            },
+            {
+              "linkId": "med-ongoing",
+              "type": "boolean",
+              "text": "Still taking it"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "p4",
+      "type": "group",
+      "text": "Daily life",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "page"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "day",
+          "type": "group",
+          "text": "Your day",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "grid"
+                  }
+                ]
+              }
+            }
+          ],
+          "item": [
+            {
+              "linkId": "morning",
+              "type": "group",
+              "text": "Morning",
+              "item": [
+                {
+                  "linkId": "morning-steps",
+                  "type": "integer",
+                  "text": "Steps"
+                },
+                {
+                  "linkId": "morning-mood",
+                  "type": "choice",
+                  "text": "Mood",
+                  "answerOption": [
+                    {
+                      "valueString": "Good"
+                    },
+                    {
+                      "valueString": "Low"
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "linkId": "evening",
+              "type": "group",
+              "text": "Evening",
+              "item": [
+                {
+                  "linkId": "evening-steps",
+                  "type": "integer",
+                  "text": "Steps"
+                },
+                {
+                  "linkId": "evening-mood",
+                  "type": "choice",
+                  "text": "Mood",
+                  "answerOption": [
+                    {
+                      "valueString": "Good"
+                    },
+                    {
+                      "valueString": "Low"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "contacts",
+          "type": "group",
+          "text": "Contacts",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+              "valueCodeableConcept": {
+                "coding": [
+                  {
+                    "system": "http://hl7.org/fhir/questionnaire-item-control",
+                    "code": "tab-container"
+                  }
+                ]
+              }
+            }
+          ],
+          "item": [
+            {
+              "linkId": "gp",
+              "type": "group",
+              "text": "Doctor",
+              "item": [
+                {
+                  "linkId": "gp-name",
+                  "type": "string",
+                  "text": "Doctor's name",
+                  "required": true
+                }
+              ]
+            },
+            {
+              "linkId": "nok",
+              "type": "group",
+              "text": "Next of kin",
+              "item": [
+                {
+                  "linkId": "nok-name",
+                  "type": "string",
+                  "text": "Next of kin name"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "linkId": "extra",
+          "type": "group",
+          "text": "More details (optional)",
+          "extension": [
+            {
+              "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-collapsible",
+              "valueCode": "default-closed"
+            }
+          ],
+          "item": [
+            {
+              "linkId": "extra-notes",
+              "type": "text",
+              "text": "Notes",
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/minLength",
+                  "valueInteger": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "linkId": "ftr",
+      "type": "group",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/StructureDefinition/questionnaire-itemControl",
+          "valueCodeableConcept": {
+            "coding": [
+              {
+                "system": "http://hl7.org/fhir/questionnaire-item-control",
+                "code": "footer"
+              }
+            ]
+          }
+        }
+      ],
+      "item": [
+        {
+          "linkId": "ftr-text",
+          "type": "display",
+          "text": "Questions? Call 0800 000 000."
+        }
+      ]
+    }
+  ]
+}

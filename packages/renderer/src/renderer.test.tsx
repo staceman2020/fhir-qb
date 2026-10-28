@@ -128,7 +128,7 @@ describe('QuestionnaireForm', () => {
     const link = within(summary).getByRole('link', { name: 'Enter How many cigarettes a day' });
     await user.click(link);
     const input = screen.getByRole('textbox', { name: /cigarettes/ });
-    expect(document.activeElement).toBe(input);
+    await waitFor(() => expect(document.activeElement).toBe(input));
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toContain(
       screen.getByText('Enter How many cigarettes a day', { selector: 'p' }).id,
@@ -173,15 +173,21 @@ describe('QuestionnaireForm', () => {
     expect(engine.getNode('nicknames[0]')?.answers).toEqual([{ valueString: 'Bub' }]);
   });
 
-  it('filters channel content and links help text', () => {
-    setup(fixtures.channelContent());
+  it('filters channel content and puts itemControl=help behind a disclosure button', async () => {
+    const { user } = setup(fixtures.channelContent());
     expect(screen.queryByText(/CAPITAL LETTERS/)).toBeNull();
     expect(screen.queryByText(/one character per box/)).toBeNull();
     expect(screen.getByText(/saved as you type/)).toBeTruthy();
     expect(screen.queryByLabelText('Office use')).toBeNull();
-    const nhi = screen.getByRole('textbox', { name: 'NHI number' });
-    const help = screen.getByText(/prescriptions and hospital letters/);
-    expect(nhi.getAttribute('aria-describedby')).toBe(help.id);
+    expect(screen.getByRole('textbox', { name: 'NHI number' })).toBeTruthy();
+    const button = screen.getByRole('button', { name: 'Help with NHI number' });
+    expect(button.getAttribute('aria-expanded')).toBe('false');
+    const panel = document.getElementById(button.getAttribute('aria-controls')!)!;
+    expect(panel.hidden).toBe(true);
+    await user.click(button);
+    expect(button.getAttribute('aria-expanded')).toBe('true');
+    expect(panel.hidden).toBe(false);
+    expect(panel.textContent).toContain('prescriptions and hospital letters');
   });
 
   it('sets grid placement custom properties and row breaks', () => {

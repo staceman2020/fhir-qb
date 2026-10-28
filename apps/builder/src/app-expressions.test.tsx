@@ -241,6 +241,54 @@ describe('Expressions in the builder', () => {
   });
 });
 
+describe('Advanced rendering settings', () => {
+  it('sets collapsible, support links and slider step', async () => {
+    const q: Questionnaire = {
+      resourceType: 'Questionnaire',
+      status: 'draft',
+      title: 'Adv',
+      item: [
+        {
+          linkId: 'g',
+          type: 'group',
+          text: 'Group',
+          item: [{ linkId: 'pain', type: 'integer', text: 'Pain' }],
+        },
+      ],
+    };
+    const { id, user } = await open(q);
+    const tree = screen.getByRole('tree');
+    await user.click(within(tree).getByRole('treeitem', { name: /Group/ }));
+    await user.click(screen.getByRole('tab', { name: 'Advanced' }));
+    await user.selectOptions(
+      screen.getByRole('combobox', { name: 'Collapsible' }),
+      'Collapsible, closed at first',
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'More information links' }),
+      'https://a.example{Enter}https://b.example',
+    );
+    await user.click(within(tree).getByRole('treeitem', { name: /Pain/ }));
+    await user.click(screen.getByRole('tab', { name: 'Advanced' }));
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Control' }), 'slider');
+    await user.type(screen.getByRole('textbox', { name: 'Step' }), '2');
+    const saved1 = await saved(id);
+    const g = saved1.item![0]!;
+    expect(getExtension(g, STD_EXT.collapsible)?.valueCode).toBe('default-closed');
+    expect(
+      g.extension?.filter((e) => e.url === STD_EXT.supportLink).map((e) => e.valueUri),
+    ).toEqual(['https://a.example', 'https://b.example']);
+    expect(getExtension(g.item![0]!, STD_EXT.sliderStepValue)?.valueInteger).toBe(2);
+    const root = await previewRoot();
+    const toggle = await waitFor(() => within(root).getByRole('button', { name: 'Group' }));
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    await user.click(toggle);
+    await waitFor(() =>
+      expect(within(root).getByRole('slider', { name: 'Pain' }).getAttribute('step')).toBe('2'),
+    );
+  });
+});
+
 describe('Terminology in the builder', () => {
   it('searches codes on the configured server and adds them to the item', async () => {
     await repo.setSetting(SETTINGS.terminologyServer, 'https://tx.example.org/fhir');

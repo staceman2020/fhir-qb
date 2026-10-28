@@ -27,6 +27,7 @@ import {
   type EvalResult,
   type FhirPathRuntime,
 } from './expressions.js';
+import { messagesFor } from './i18n.js';
 import { lintQuestionnaire } from './lint.js';
 import { resolveOptions, type AnswerOptionView, type OptionsResult } from './options.js';
 import { buildResponse } from './response.js';
@@ -415,12 +416,10 @@ export function createFormEngineSync(
     return out;
   };
 
+  // Locale catalog (registerMessages) first, then explicit overrides from options.
+  const messages = { ...messagesFor(options.locale), ...options.messages };
   const issuesFor = (d: Derived, inputErrors: ReadonlyMap<string, string>) => [
-    ...validateResponse(
-      definitions,
-      { items: d.items, enabled: d.enabled, inputErrors },
-      options.messages,
-    ),
+    ...validateResponse(definitions, { items: d.items, enabled: d.enabled, inputErrors }, messages),
     ...constraintIssues(d),
   ];
 

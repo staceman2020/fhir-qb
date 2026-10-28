@@ -20,6 +20,11 @@ export interface ControlProps {
   invalid: boolean;
   readOnly: boolean;
   label: string;
+  /** Labels the control by ids instead of a <label> (table cells). */
+  labelledBy?: string | undefined;
+  /** Slider end labels from `lower` / `upper` display items. */
+  lowerLabel?: string | undefined;
+  upperLabel?: string | undefined;
 }
 
 const aria = (p: Pick<ControlProps, 'describedBy' | 'invalid'>) => ({
@@ -217,7 +222,9 @@ export function ChoiceControl(
 
 // ------------------------------------------------------------------ boolean
 
-export function BooleanControl(p: ControlProps & { labelContent: ReactNode }) {
+export function BooleanControl(
+  p: ControlProps & { labelContent: ReactNode; afterLabel?: ReactNode },
+) {
   const { engine, strings } = useQb();
   const { item, node, inputId, readOnly } = p;
   const value = node.answers[0]?.valueBoolean;
@@ -238,6 +245,7 @@ export function BooleanControl(p: ControlProps & { labelContent: ReactNode }) {
         <label htmlFor={inputId} className="qb-label" part="label">
           {p.labelContent}
         </label>
+        {p.afterLabel}
       </div>
     );
   }
@@ -345,7 +353,8 @@ export function SingleControl(p: SingleControlProps) {
     id: inputId,
     part: 'input',
     readOnly,
-    'aria-label': p.ariaLabel,
+    'aria-label': p.labelledBy ? undefined : p.ariaLabel,
+    'aria-labelledby': p.labelledBy,
     ...aria(p),
   };
   switch (item.type) {
@@ -454,12 +463,29 @@ function NumberInput(p: WithCommon) {
   const current = isInt ? p.value?.valueInteger : p.value?.valueDecimal;
   const [raw, setRaw] = useNumericText(current, parse);
   const unit = getExtension(p.item, STD_EXT.unit)?.valueCoding;
+  const control = itemControl(p.item);
+  if (control === 'slider') return <SliderInput {...p} />;
+  const bound = (url: string) => {
+    const e = getExtension(p.item, url);
+    return e?.valueInteger ?? e?.valueDecimal;
+  };
+  const spinner = control === 'spinner';
   const input = (
     <input
       {...p.common}
       className="qb-input qb-input-narrow"
-      type="text"
+      type={spinner ? 'number' : 'text'}
       inputMode={isInt ? 'numeric' : 'decimal'}
+      {...(spinner
+        ? {
+            min: bound(STD_EXT.minValue),
+            max: bound(STD_EXT.maxValue),
+            step:
+              getExtension(p.item, STD_EXT.sliderStepValue)?.valueInteger ??
+              getExtension(p.item, STD_EXT.sliderStepValue)?.valueDecimal ??
+              (isInt ? 1 : 'any'),
+          }
+        : {})}
       value={raw}
       onChange={(e) => {
         const v = e.target.value;
@@ -479,6 +505,77 @@ function NumberInput(p: WithCommon) {
     <div className="qb-with-unit">
       {input}
       <span>{unit.display ?? unit.code}</span>
+    </div>
+  );
+}
+
+/**
+ * `slider` control for integer/decimal: a native range input (keyboard-operable, no dragging
+ * required by WCAG 2.5.7 since arrow keys work), with lower/upper labels and the value shown.
+ * Until the person moves it, the answer is empty and announced as "Not answered".
+ */
+function SliderInput(p: WithCommon) {
+  const { strings } = useQb();
+  const isInt = p.item.type === 'integer';
+  const bound = (url: string) => {
+    const e = getExtension(p.item, url);
+    return e?.valueInteger ?? e?.valueDecimal;
+  };
+  const min = bound(STD_EXT.minValue) ?? 0;
+  const max = bound(STD_EXT.maxValue) ?? 100;
+  const stepExt = getExtension(p.item, STD_EXT.sliderStepValue);
+  const step = stepExt?.valueInteger ?? stepExt?.valueDecimal ?? 1;
+  const value = isInt ? p.value?.valueInteger : p.value?.valueDecimal;
+  const unit = getExtension(p.item, STD_EXT.unit)?.valueCoding;
+  const unitText = unit ? ` ${unit.display ?? unit.code}` : '';
+  const lowerId = `${p.inputId}-lower`;
+  const upperId = `${p.inputId}-upper`;
+  const outputId = `${p.inputId}-value`;
+  const describedBy =
+    [p.describedBy, p.lowerLabel && lowerId, p.upperLabel && upperId].filter(Boolean).join(' ') ||
+    undefined;
+  return (
+    <div className={`qb-slider${value === undefined ? ' qb-unset' : ''}`}>
+      <div className="qb-slider-track">
+        {p.lowerLabel && (
+          <span className="qb-slider-end" id={lowerId}>
+            {p.lowerLabel}
+          </span>
+        )}
+        <input
+          {...p.common}
+          className="qb-range"
+          type="range"
+          min={min}
+          max={max}
+          step={step}
+          value={value ?? min}
+          disabled={p.readOnly}
+          aria-describedby={describedBy}
+          aria-valuetext={value === undefined ? strings.notAnswered : `${value}${unitText}`}
+          onChange={(e) => {
+            const n = Number(e.target.value);
+            p.onValue(isInt ? { valueInteger: Math.round(n) } : { valueDecimal: n });
+          }}
+        />
+        {p.upperLabel && (
+          <span className="qb-slider-end" id={upperId}>
+            {p.upperLabel}
+          </span>
+        )}
+      </div>
+      <output id={outputId} htmlFor={p.inputId} className="qb-slider-value">
+        {value === undefined ? strings.notAnswered : `${value}${unitText}`}
+      </output>
+      {value !== undefined && !p.readOnly && (
+        <button
+          type="button"
+          className="qb-button qb-button-secondary qb-small"
+          onClick={() => p.onValue(undefined)}
+        >
+          {strings.clearAnswer}
+        </button>
+      )}
     </div>
   );
 }

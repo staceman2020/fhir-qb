@@ -14,6 +14,16 @@ function focusField(from: HTMLElement, id: string) {
   target.scrollIntoView?.({ block: 'center' });
 }
 
+/** Waits a few frames for a revealed field to mount and register its id, then focuses it. */
+function focusWhenReady(from: HTMLElement, getId: () => string | undefined, tries = 10) {
+  requestAnimationFrame(() => {
+    const id = getId();
+    const root = from.getRootNode() as Document | ShadowRoot;
+    if (id && root.getElementById(id)) focusField(from, id);
+    else if (tries > 0) focusWhenReady(from, getId, tries - 1);
+  });
+}
+
 export function ErrorSummary({
   issues,
   ref,
@@ -21,7 +31,7 @@ export function ErrorSummary({
   issues: readonly ValidationIssue[];
   ref?: Ref<HTMLDivElement>;
 }) {
-  const { strings, fieldIds } = useQb();
+  const { strings, fieldIds, reveal } = useQb();
   const titleId = useId();
   return (
     <div
@@ -34,15 +44,18 @@ export function ErrorSummary({
       <h2 id={titleId}>{strings.errorSummaryTitle}</h2>
       <ul>
         {issues.map((issue, i) => {
-          const id = issue.path ? fieldIds.get(issue.path) : undefined;
+          const path = issue.path;
           return (
-            <li key={`${issue.path}-${issue.code}-${i}`}>
-              {id ? (
+            <li key={`${path}-${issue.code}-${i}`}>
+              {path ? (
                 <a
-                  href={`#${id}`}
+                  href={`#${fieldIds.get(path) ?? ''}`}
                   onClick={(e) => {
                     e.preventDefault();
-                    focusField(e.currentTarget, id);
+                    const from = e.currentTarget;
+                    // Open the page, tab or collapsed group that holds the field, then focus it.
+                    reveal(path);
+                    focusWhenReady(from, () => fieldIds.get(path));
                   }}
                 >
                   {issue.message}

@@ -1,6 +1,6 @@
-import { memo, type CSSProperties } from 'react';
+import { memo, type CSSProperties, type ReactNode } from 'react';
 import type { QuestionnaireItem } from 'fhir/r4';
-import { disabledDisplay, type ItemNode } from '@qb/core';
+import { disabledDisplay, itemControl, type ItemNode } from '@qb/core';
 import {
   BREAKPOINTS,
   getRowBreak,
@@ -13,6 +13,7 @@ import { useEnabled } from '../hooks.js';
 import { DisplayView } from './DisplayView.js';
 import { GroupView } from './GroupView.js';
 import { QuestionView } from './QuestionView.js';
+import { GroupTable } from './tables.js';
 
 /** Inline custom properties for the item's grid placement (see styles.ts). */
 function cellStyle(item: QuestionnaireItem): CSSProperties | undefined {
@@ -69,6 +70,7 @@ const ItemCell = memo(function ItemCell({
 });
 
 /** Renders sibling instances in a 12-column grid, skipping items not shown on the web channel. */
+/** Renders sibling instances in a 12-column grid, skipping items not shown on the web channel. */
 export function ItemList({ nodes }: { nodes: readonly ItemNode[] }) {
   const { engine } = useQb();
   const visible = nodes.filter((n) => {
@@ -76,18 +78,29 @@ export function ItemList({ nodes }: { nodes: readonly ItemNode[] }) {
     return item !== undefined && isShownInChannel(item, 'web');
   });
   if (!visible.length) return null;
-  return (
-    <div className="qb-grid">
-      {visible.map((node) => {
-        const item = engine.definitions.byLinkId.get(node.linkId)!.item;
-        let repeat: RepeatInfo | undefined;
-        if (item.type === 'group' && item.repeats) {
-          const same = visible.filter((n) => n.linkId === node.linkId);
-          const index = same.indexOf(node) + 1;
-          repeat = { index, count: same.length, isLast: index === same.length };
-        }
-        return <ItemCell key={node.path} node={node} repeat={repeat} />;
-      })}
-    </div>
-  );
+  const cells: ReactNode[] = [];
+  const seenTables = new Set<string>();
+  for (const node of visible) {
+    const item = engine.definitions.byLinkId.get(node.linkId)!.item;
+    // gtable: every instance of the repeating group becomes one row of a single table.
+    if (item.type === 'group' && itemControl(item) === 'gtable') {
+      if (seenTables.has(node.linkId)) continue;
+      seenTables.add(node.linkId);
+      const instances = visible.filter((n) => n.linkId === node.linkId);
+      cells.push(
+        <div key={node.path} className="qb-cell" style={cellStyle(item)} data-linkid={item.linkId}>
+          <GroupTable instances={instances} item={item} />
+        </div>,
+      );
+      continue;
+    }
+    let repeat: RepeatInfo | undefined;
+    if (item.type === 'group' && item.repeats) {
+      const same = visible.filter((n) => n.linkId === node.linkId);
+      const index = same.indexOf(node) + 1;
+      repeat = { index, count: same.length, isLast: index === same.length };
+    }
+    cells.push(<ItemCell key={node.path} node={node} repeat={repeat} />);
+  }
+  return <div className="qb-grid">{cells}</div>;
 }

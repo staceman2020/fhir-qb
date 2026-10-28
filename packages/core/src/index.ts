@@ -11,3 +11,4 @@ export * from './messages.js';
 export * from './engine.js';
 export * from './expressions.js';
 export * from './terminology.js';
+export * from './i18n.js';

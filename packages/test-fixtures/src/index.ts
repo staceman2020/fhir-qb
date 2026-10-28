@@ -1,4 +1,5 @@
 import type { Questionnaire, QuestionnaireItem, QuestionnaireResponse } from 'fhir/r4';
+import advancedRendering from '../questionnaires/advanced-rendering.json' with { type: 'json' };
 import allTypes from '../questionnaires/all-types.json' with { type: 'json' };
 import channelContent from '../questionnaires/channel-content.json' with { type: 'json' };
 import enableWhen from '../questionnaires/enable-when.json' with { type: 'json' };
@@ -6,6 +7,7 @@ import layoutGrid from '../questionnaires/layout-grid.json' with { type: 'json' 
 import nzPatient from '../questionnaires/nz-patient.json' with { type: 'json' };
 import phq9 from '../questionnaires/phq-9.json' with { type: 'json' };
 import phq9Golden from '../golden/phq-9.json' with { type: 'json' };
+import advancedGolden from '../golden/advanced-rendering.json' with { type: 'json' };
 import repeats from '../questionnaires/repeats.json' with { type: 'json' };
 
 /** Returns a deep copy so tests cannot mutate shared fixtures. */
@@ -22,6 +24,7 @@ export const fixtures = {
   channelContent: q(channelContent),
   nzPatient: q(nzPatient),
   phq9: q(phq9),
+  advancedRendering: q(advancedRendering),
 } as const;
 
 export interface GoldenCase {
@@ -33,6 +36,8 @@ export interface GoldenCase {
 /** Expected responses for scripted answers (plan §11.1 parity/golden tests). */
 export const golden = {
   phq9: (): GoldenCase => JSON.parse(JSON.stringify(phq9Golden)) as GoldenCase,
+  advancedRendering: (): QuestionnaireResponse =>
+    (JSON.parse(JSON.stringify(advancedGolden)) as { response: QuestionnaireResponse }).response,
 };
 
 export type FixtureName = keyof typeof fixtures;

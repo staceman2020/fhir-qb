@@ -1,0 +1,277 @@
+{
+  "_comment": "Hand-authored expected response for the scripted UI run in renderer advanced-rendering.test.tsx (plan §11.1). Replace with LHC-Forms output once the golden-generation script exists.",
+  "response": {
+    "resourceType": "QuestionnaireResponse",
+    "status": "completed",
+    "questionnaire": "http://example.org/fhir/qb/Questionnaire/advanced-rendering|1.0.0",
+    "item": [
+      {
+        "linkId": "p1",
+        "text": "About you",
+        "item": [
+          {
+            "linkId": "name",
+            "text": "Preferred name",
+            "answer": [
+              {
+                "valueString": "Aroha"
+              }
+            ]
+          },
+          {
+            "linkId": "pain",
+            "text": "Pain today",
+            "answer": [
+              {
+                "valueInteger": 7
+              }
+            ]
+          },
+          {
+            "linkId": "temp",
+            "text": "Temperature",
+            "answer": [
+              {
+                "valueDecimal": 37.5
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "linkId": "p2",
+        "text": "Symptoms",
+        "item": [
+          {
+            "linkId": "symptoms",
+            "text": "In the last week, how often did you have…",
+            "item": [
+              {
+                "linkId": "cough",
+                "text": "A cough",
+                "answer": [
+                  {
+                    "valueCoding": {
+                      "system": "urn:qb:freq",
+                      "code": "2",
+                      "display": "Often"
+                    }
+                  }
+                ]
+              },
+              {
+                "linkId": "fever",
+                "text": "A fever",
+                "answer": [
+                  {
+                    "valueCoding": {
+                      "system": "urn:qb:freq",
+                      "code": "0",
+                      "display": "Never"
+                    }
+                  }
+                ]
+              },
+              {
+                "linkId": "other-symptom",
+                "text": "Anything else",
+                "answer": [
+                  {
+                    "valueString": "Sore throat"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "linkId": "travel",
+            "text": "Recent travel",
+            "item": [
+              {
+                "linkId": "travel-overseas",
+                "text": "Overseas",
+                "answer": [
+                  {
+                    "valueCoding": {
+                      "system": "urn:qb:yn",
+                      "code": "n",
+                      "display": "No"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "linkId": "p3",
+        "text": "Medicines",
+        "item": [
+          {
+            "linkId": "meds",
+            "text": "Medicines you take",
+            "item": [
+              {
+                "linkId": "med-name",
+                "text": "Medicine name",
+                "answer": [
+                  {
+                    "valueString": "Paracetamol"
+                  }
+                ]
+              },
+              {
+                "linkId": "med-dose",
+                "text": "Dose",
+                "answer": [
+                  {
+                    "valueDecimal": 500
+                  }
+                ]
+              },
+              {
+                "linkId": "med-freq",
+                "text": "How often",
+                "answer": [
+                  {
+                    "valueString": "As needed"
+                  }
+                ]
+              },
+              {
+                "linkId": "med-ongoing",
+                "text": "Still taking it",
+                "answer": [
+                  {
+                    "valueBoolean": true
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "linkId": "meds",
+            "text": "Medicines you take",
+            "item": [
+              {
+                "linkId": "med-name",
+                "text": "Medicine name",
+                "answer": [
+                  {
+                    "valueString": "Ibuprofen"
+                  }
+                ]
+              },
+              {
+                "linkId": "med-dose",
+                "text": "Dose",
+                "answer": [
+                  {
+                    "valueDecimal": 200
+                  }
+                ]
+              },
+              {
+                "linkId": "med-freq",
+                "text": "How often",
+                "answer": [
+                  {
+                    "valueString": "Daily"
+                  }
+                ]
+              },
+              {
+                "linkId": "med-ongoing",
+                "text": "Still taking it",
+                "answer": [
+                  {
+                    "valueBoolean": false
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "linkId": "p4",
+        "text": "Daily life",
+        "item": [
+          {
+            "linkId": "day",
+            "text": "Your day",
+            "item": [
+              {
+                "linkId": "morning",
+                "text": "Morning",
+                "item": [
+                  {
+                    "linkId": "morning-steps",
+                    "text": "Steps",
+                    "answer": [
+                      {
+                        "valueInteger": 3000
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "linkId": "evening",
+                "text": "Evening",
+                "item": [
+                  {
+                    "linkId": "evening-mood",
+                    "text": "Mood",
+                    "answer": [
+                      {
+                        "valueString": "Good"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "linkId": "contacts",
+            "text": "Contacts",
+            "item": [
+              {
+                "linkId": "gp",
+                "text": "Doctor",
+                "item": [
+                  {
+                    "linkId": "gp-name",
+                    "text": "Doctor's name",
+                    "answer": [
+                      {
+                        "valueString": "Dr Smith"
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "linkId": "extra",
+            "text": "More details (optional)",
+            "item": [
+              {
+                "linkId": "extra-notes",
+                "text": "Notes",
+                "answer": [
+                  {
+                    "valueString": "Feeling better"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

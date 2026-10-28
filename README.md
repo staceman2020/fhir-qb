@@ -28,6 +28,6 @@ pnpm ig:build      # SUSHI build of the IG
 
 ## Status
 
-Phases 0–3 are done: foundations, the core engine and renderer, the builder MVP, and expressions and terminology. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
+Phases 0–4 are done: foundations, the core engine and renderer, the builder MVP, expressions and terminology, and advanced rendering. See [docs/parity-matrix.md](docs/parity-matrix.md) for feature status and [docs/adr](docs/adr) for decisions.
 
 Licence: Apache-2.0 (open decision #7).

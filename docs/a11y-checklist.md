@@ -39,5 +39,12 @@ Automated: axe-core in Vitest browser mode for every fixture × breakpoint (to b
 - [ ] Calculated values are announced in a polite live region, throttled to one message per second.
 - [ ] The autocomplete follows the APG combobox pattern: arrow keys, Enter, Escape, `aria-activedescendant`, and a result count announced in a status region. Selected answers in a multi-select appear as a list with labelled remove buttons.
 - [ ] Options switched off by an expression are hidden (or shown disabled if already selected).
+- [ ] Tables (`table`, `htable`, `gtable`, `grid`) use real `<table>` markup with row/column headers. Every input is labelled by its row and column header text only (errors are descriptions), and tables scroll inside a focusable, labelled region at narrow widths (1.4.10).
+- [ ] Pages: "Page n of m" receives focus on page change; Next validates the page; summary links reveal fields on other pages, in other tabs and in collapsed groups.
+- [ ] Tab containers follow the APG tabs pattern and show problem counts on tabs.
+- [ ] Collapsible groups use a button with `aria-expanded` inside the legend.
+- [ ] Help and flyover open on activation (not hover), close with Esc, and the button names the question ("Help with …"). Help is in the same place for every item (3.2.6).
+- [ ] The slider is a native range input (keyboard-operable, 2.5.7). Its value and "Not answered" state are announced via `aria-valuetext`, with a Clear button.
+- [ ] Support links state that they open in a new tab.
 - [ ] Focus not obscured by sticky header/footer (2.4.11) once header/footer controls exist (Phase 4).
 - [ ] PDF/UA verification with veraPDF (Phase 5).

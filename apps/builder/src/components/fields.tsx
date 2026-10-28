@@ -238,3 +238,32 @@ export function RadioGroup(p: {
     </fieldset>
   );
 }
+
+/**
+ * One value per line (e.g. URLs). Keeps the typed text locally so blank lines being typed are not
+ * stripped; resyncs when the saved list changes from elsewhere (undo, JSON edits).
+ */
+export function LinesField(p: Common & { values: string[]; onChange: (values: string[]) => void }) {
+  const parse = (t: string) =>
+    t
+      .split('\n')
+      .map((x) => x.trim())
+      .filter(Boolean);
+  const [text, setText] = useState(p.values.join('\n'));
+  const key = p.values.join('\n');
+  useEffect(() => {
+    setText((t) => (parse(t).join('\n') === key ? t : key));
+  }, [key]);
+  return (
+    <TextField
+      {...p}
+      multiline
+      value={text}
+      onChange={(t) => {
+        setText(t);
+        const next = parse(t);
+        if (next.join('\n') !== key) p.onChange(next);
+      }}
+    />
+  );
+}

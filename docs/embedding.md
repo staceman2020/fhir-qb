@@ -35,7 +35,7 @@ Inside a host `<form>`, the element is form-associated where the browser support
 
 ## Theming
 
-Set `--qb-*` custom properties on the element (they pierce the shadow boundary): `--qb-color-text`, `--qb-color-bg`, `--qb-color-accent`, `--qb-color-error`, `--qb-color-border`, `--qb-color-muted`, `--qb-focus-ring`, `--qb-font-family`, `--qb-font-size`, `--qb-space-1…4`, `--qb-radius`, `--qb-gap`. Use `theme="minimal"` to inherit host fonts and colours. Style individual parts with `::part()`: `form`, `title`, `group`, `legend`, `question`, `label`, `input`, `help`, `error`, `error-summary`, `display`, `button`, `submit`.
+Set `--qb-*` custom properties on the element (they pierce the shadow boundary): `--qb-color-text`, `--qb-color-bg`, `--qb-color-accent`, `--qb-color-error`, `--qb-color-border`, `--qb-color-muted`, `--qb-focus-ring`, `--qb-font-family`, `--qb-font-size`, `--qb-space-1…4`, `--qb-radius`, `--qb-gap`. Use `theme="minimal"` to inherit host fonts and colours. Style individual parts with `::part()`: `form`, `title`, `group`, `legend`, `question`, `label`, `input`, `help`, `help-button`, `support-link`, `error`, `error-summary`, `display`, `button`, `submit`, `page`, `header`, `footer`, `tablist`, `tab`, `listbox`.
 
 ## Content Security Policy
 
@@ -49,3 +49,14 @@ The ESM build works under `script-src 'self'`: no `eval` or `new Function`. Styl
 ## Terminology
 
 Options from `answerValueSet` are fetched with `ValueSet/$expand` from the server chosen per ADR-008. Sets of up to 30 codes show as radio buttons or a list; larger sets, or items with `itemControl` `autocomplete`, show a search box (minimum 2 characters, 250 ms debounce). Only open servers are supported, and they must allow cross-origin requests from the host page. The Settings page in the builder has a "Test connection" button that diagnoses this.
+
+## Language
+
+Set `lang` on the element (or `Questionnaire.language`) to choose the language. Item text uses the FHIR `translation` extension when it has one for that language, matching the exact tag first and then the primary language (`mi-NZ` → `mi`). Only en-NZ UI strings ship. Hosts can add others:
+
+```js
+import { registerStrings } from '@qb/renderer';
+import { registerMessages } from '@qb/core';
+registerStrings('mi', { next: 'Panuku', previous: 'Hoki' });
+registerMessages('mi', { required: ({ label }) => `…${label}…` });
+```

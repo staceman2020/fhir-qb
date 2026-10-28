@@ -135,6 +135,7 @@ export function itemControlsFor(type: ItemType): string[] {
         'list',
       ];
     case 'display':
+      // help/flyover: behind a button; legal: small print; prompt: hint; lower/upper: slider end labels.
       return ['help', 'flyover', 'legal', 'prompt', 'lower', 'upper'];
     default:
       return [];
