@@ -1,8 +1,8 @@
 import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
-import { createFormEngineSync } from '@qb/core';
-import { fixtures } from '@qb/test-fixtures';
+import { createFormEngineSync, createMemoryFhirClient } from '@qb/core';
+import { fixtures, populationData } from '@qb/test-fixtures';
 import { describe, expect, it, vi } from 'vitest';
 import { QuestionnaireForm } from './components/QuestionnaireForm.js';
 import { fromLocalDateTime, toLocalDateTime } from './components/controls.js';
@@ -340,6 +340,46 @@ describe('<qb-questionnaire>', () => {
     );
     expect(submitted).toHaveBeenCalledOnce();
     expect((submitted.mock.calls[0]![0] as CustomEvent).composed).toBe(true);
+    el.remove();
+  });
+
+  it('populates from launch context and a FHIR client, and extracts a transaction Bundle', async () => {
+    const el = document.createElement('qb-questionnaire');
+    const data = populationData();
+    el.launchContext = { patient: data.find((r) => r.id === 'p1')! };
+    el.fhirClient = createMemoryFhirClient(data);
+    const ready = new Promise((r) => el.addEventListener('qb-ready', r, { once: true }));
+    document.body.append(el);
+    await act(async () => {
+      el.questionnaire = fixtures.population();
+      await ready;
+    });
+    const root = el.shadowRoot! as unknown as HTMLElement;
+    await waitFor(() =>
+      expect(
+        (within(root).getByRole('textbox', { name: 'Given name' }) as HTMLInputElement).value,
+      ).toBe('Aroha'),
+    );
+    expect(
+      within(root)
+        .getAllByRole('textbox', { name: 'Condition' })
+        .map((i) => (i as HTMLInputElement).value),
+    ).toEqual(['Asthma', 'Type 2 diabetes']);
+    expect(el.getQuestionnaireResponse()?.subject).toEqual({ reference: 'Patient/p1' });
+    const bundle = await el.extract();
+    expect(bundle.type).toBe('transaction');
+    expect(bundle.entry?.map((e) => e.request?.url)).toEqual(['Observation', 'Patient/p1']);
+    // Changing the launch context re-populates.
+    const rebuilt = new Promise((r) => el.addEventListener('qb-ready', r, { once: true }));
+    await act(async () => {
+      el.launchContext = { patient: data.find((r) => r.id === 'p2')! };
+      await rebuilt;
+    });
+    await waitFor(() =>
+      expect(
+        (within(root).getByRole('textbox', { name: 'Given name' }) as HTMLInputElement).value,
+      ).toBe('Tama'),
+    );
     el.remove();
   });
 

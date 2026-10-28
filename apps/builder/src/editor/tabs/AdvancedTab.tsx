@@ -2,15 +2,27 @@ import type { Extension, QuestionnaireItem } from 'fhir/r4';
 import { QB_CANONICAL, STD_EXT, getExtension } from '@qb/extensions';
 import {
   getItemControl,
+  isQuestionType,
   itemControlsFor,
   setItemControl,
   setSimpleExtension,
 } from '../../model/items.js';
+import {
+  getExtractionContext,
+  getLinkPeriod,
+  getPopulationContext,
+  setExtractionContext,
+  setLinkPeriod,
+  setPopulationContext,
+  type Duration,
+} from '../../model/data.js';
+import { ExpressionEditor } from '../expression-ui.js';
 import { useEditor } from '../actions-context.js';
 import {
   Checkbox,
   LinesField,
   NumberField,
+  RadioGroup,
   SelectField,
   TextField,
 } from '../../components/fields.js';
@@ -35,6 +47,9 @@ export function AdvancedTab({ item }: { item: QuestionnaireItem }) {
   const setExt = <K extends keyof Extension>(url: string, key: K, v: Extension[K] | undefined) =>
     update((i) => setSimpleExtension(i, url, key, v), url);
   const controls = itemControlsFor(item.type);
+  const linkPeriod = getLinkPeriod(item);
+  const extraction = getExtractionContext(item);
+  const popContext = getPopulationContext(item);
   const textual = ['string', 'text', 'url', 'open-choice'].includes(item.type);
   const valueKey = VALUE_KEY[item.type];
   const others = (item.extension ?? []).filter(
@@ -246,6 +261,175 @@ export function AdvancedTab({ item }: { item: QuestionnaireItem }) {
             }, 'supportLink')
           }
         />
+      )}
+      <h3 style={{ marginTop: '1rem' }}>Data (pre-filling and extraction)</h3>
+      {isQuestionType(item.type) && (
+        <>
+          <TextField
+            label="Definition"
+            hint="The FHIR element this answer maps to, e.g. http://hl7.org/fhir/StructureDefinition/Patient#Patient.birthDate. Used when a group is extracted as a resource."
+            spellCheck={false}
+            value={item.definition}
+            onChange={(v) =>
+              update((i) => {
+                const n = { ...i };
+                if (v.trim()) n.definition = v.trim();
+                else delete n.definition;
+                return n;
+              }, 'definition')
+            }
+          />
+          {!item.code?.length && (
+            <p className="muted">
+              Add a code on the Basic tab to save answers as Observations or pre-fill from recent
+              observations.
+            </p>
+          )}
+          {item.code?.length ? (
+            <>
+              <div className="row">
+                <NumberField
+                  label="Pre-fill from observations within"
+                  hint="Uses the patient's most recent Observation with this item's code."
+                  min={1}
+                  value={linkPeriod?.value}
+                  onChange={(v) =>
+                    update(
+                      (i) =>
+                        setLinkPeriod(
+                          i,
+                          v ? { value: v, unit: linkPeriod?.unit ?? 'a' } : undefined,
+                        ),
+                      'linkPeriod',
+                    )
+                  }
+                />
+                <SelectField
+                  label="Period unit"
+                  value={linkPeriod?.unit ?? 'a'}
+                  disabled={!linkPeriod}
+                  options={[
+                    { value: 'a', label: 'years' },
+                    { value: 'mo', label: 'months' },
+                    { value: 'wk', label: 'weeks' },
+                    { value: 'd', label: 'days' },
+                  ]}
+                  onChange={(v) =>
+                    linkPeriod &&
+                    update((i) =>
+                      setLinkPeriod(i, { value: linkPeriod.value, unit: v as Duration['unit'] }),
+                    )
+                  }
+                />
+              </div>
+            </>
+          ) : null}
+        </>
+      )}
+      {item.type !== 'display' && (
+        <Checkbox
+          label="Save answers as Observations"
+          hint={
+            item.type === 'group'
+              ? 'Applies to coded questions in this group.'
+              : 'Each answer becomes an Observation with this item’s code.'
+          }
+          checked={ext(STD_EXT.observationExtract)?.valueBoolean === true}
+          onChange={(v) => setExt(STD_EXT.observationExtract, 'valueBoolean', v ? true : undefined)}
+        />
+      )}
+      {item.type === 'group' && (
+        <>
+          <RadioGroup
+            legend="Extract this group as a resource"
+            value={extraction.kind}
+            options={[
+              { value: 'none', label: 'No' },
+              { value: 'create', label: 'Create a new resource' },
+              {
+                value: 'update',
+                label: 'Update a resource from an expression',
+                hint: 'e.g. %patient',
+              },
+            ]}
+            onChange={(v) =>
+              update((i) =>
+                setExtractionContext(
+                  i,
+                  v === 'create'
+                    ? { kind: 'create', type: 'Patient' }
+                    : v === 'update'
+                      ? { kind: 'update', expression: '%patient' }
+                      : { kind: 'none' },
+                ),
+              )
+            }
+          />
+          {extraction.kind === 'create' && (
+            <TextField
+              label="Resource type"
+              hint="e.g. Patient, RelatedPerson, Condition"
+              value={extraction.type}
+              onChange={(v) =>
+                update(
+                  (i) => setExtractionContext(i, { kind: 'create', type: v.trim() }),
+                  'extractType',
+                )
+              }
+            />
+          )}
+          {extraction.kind === 'update' && (
+            <ExpressionEditor
+              label="Resource to update"
+              value={extraction.expression}
+              scopeLinkId={id}
+              onChange={(v) =>
+                update(
+                  (i) => setExtractionContext(i, { kind: 'update', expression: v }),
+                  'extractExpr',
+                )
+              }
+            />
+          )}
+          <Checkbox
+            label="Repeat this group once per resource when pre-filling"
+            hint="For example, one copy per current condition."
+            checked={popContext !== undefined}
+            onChange={(v) =>
+              update((i) =>
+                setPopulationContext(i, v ? { name: 'item', expression: '' } : undefined),
+              )
+            }
+          />
+          {popContext && (
+            <>
+              <TextField
+                label="Name for each resource"
+                hint="Use it in the group's starting-answer expressions as %name."
+                spellCheck={false}
+                value={popContext.name}
+                onChange={(v) =>
+                  update(
+                    (i) => setPopulationContext(i, { ...popContext, name: v.trim() }),
+                    'popName',
+                  )
+                }
+              />
+              <ExpressionEditor
+                label="Resources to repeat over"
+                value={popContext.expression}
+                scopeLinkId={id}
+                hint="FHIRPath, e.g. %conditions.entry.resource"
+                onChange={(v) =>
+                  update(
+                    (i) => setPopulationContext(i, { ...popContext, expression: v }),
+                    'popExpr',
+                  )
+                }
+              />
+            </>
+          )}
+        </>
       )}
       <Checkbox
         label="Hidden"

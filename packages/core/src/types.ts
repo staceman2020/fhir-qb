@@ -122,6 +122,8 @@ export interface EngineOptions {
   locale?: string;
   features?: Partial<FeatureFlags>;
   messages?: Partial<Messages>;
+  /** "Now" for population date windows (observationLinkPeriod); defaults to the current time. */
+  now?: Date;
 }
 
 export interface ResponseOptions {

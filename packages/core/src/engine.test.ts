@@ -300,11 +300,13 @@ describe('engine: state, repeats and responses', () => {
     expect(e.getResponse().item?.map((i) => i.linkId)).toEqual(['hidden-calc']);
   });
 
-  it('rejects non-Questionnaire input and unimplemented extraction', async () => {
+  it('rejects non-Questionnaire input; extraction without extraction extensions is an empty transaction', async () => {
     expect(() => createFormEngineSync({} as Questionnaire)).toThrow(TypeError);
-    await expect(createFormEngineSync(fixtures.allTypes()).extract()).rejects.toThrow(
-      /not implemented/,
-    );
+    expect(await createFormEngineSync(fixtures.allTypes()).extract()).toEqual({
+      resourceType: 'Bundle',
+      type: 'transaction',
+      entry: [],
+    });
   });
 });
 

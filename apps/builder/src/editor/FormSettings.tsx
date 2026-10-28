@@ -11,6 +11,7 @@ import { useEditorState } from '../state/hooks.js';
 import { useEditor } from './actions-context.js';
 import { ConstraintsEditor, VariablesEditor } from './expression-ui.js';
 import { ScoringWizard } from './ScoringWizard.js';
+import { LaunchContexts } from './LaunchContexts.js';
 import { TestConnection } from '../components/TestConnection.js';
 import { useDefaultServer } from '../terminology.js';
 import {
@@ -126,6 +127,8 @@ export function FormSettings() {
         }
       />
       <TestConnection server={tx || defaultServer} />
+      <h3>Launch context</h3>
+      <LaunchContexts />
       <h3>Variables</h3>
       <p className="muted">Available to every item in the form.</p>
       <VariablesEditor

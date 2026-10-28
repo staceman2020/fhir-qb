@@ -1,4 +1,4 @@
-import type { Questionnaire } from 'fhir/r4';
+import type { FhirResource, Questionnaire } from 'fhir/r4';
 import {
   db as defaultDb,
   type QbDatabase,
@@ -98,6 +98,23 @@ export function createRepository(db: QbDatabase = defaultDb) {
     getVersion: (seq: number) => db.versions.get(seq),
 
     deleteVersion: (seq: number) => db.versions.delete(seq),
+
+    // ---------------------------------------------------------------- test data (launch context)
+
+    getTestData: (questionnaireId: string) => db.launchContexts.get(questionnaireId),
+
+    async saveTestData(
+      questionnaireId: string,
+      resources: Record<string, FhirResource>,
+      serverResources: FhirResource[],
+    ): Promise<void> {
+      await db.launchContexts.put({
+        id: questionnaireId,
+        questionnaireId,
+        resources,
+        serverResources,
+      });
+    },
 
     // ---------------------------------------------------------------- settings
 

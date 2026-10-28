@@ -23,6 +23,14 @@ export interface FhirPathRuntime {
   compile(expression: string, base: string | undefined): CompiledExpression;
   /** Throws with a message on a syntax error. */
   parse(expression: string): void;
+  /** fhirpath.js R4 model: element types (`path2Type`), repeating elements, choice types. */
+  model: R4Model;
+}
+
+export interface R4Model {
+  path2Type: Record<string, string>;
+  path2Repeating?: Record<string, boolean>;
+  choiceTypePaths: Record<string, string[]>;
 }
 
 export interface FhirPathModules {
@@ -52,6 +60,7 @@ export function loadFhirPath(): Promise<FhirPathRuntime> {
       return (context, env) => fn(context, env as never) as unknown[];
     },
     parse: (expression) => void fhirpath.parse(expression),
+    model: r4 as R4Model,
   }));
   loading.catch(() => (loading = undefined));
   return loading;
@@ -390,7 +399,17 @@ export class ExpressionEvaluator {
         walk(i.item);
       });
     walk(questionnaire.item);
-    this.#base = { ...deepCopy(launchContext), questionnaire };
+    // Declared launch contexts that were not provided evaluate as empty rather than as an
+    // "undefined variable" error; population already reports them as missing.
+    const declared = getExtensions(index.questionnaire, STD_EXT.launchContext)
+      .map((e) => getSubExtension(e, 'name'))
+      .map((n) => n?.valueCoding?.code ?? n?.valueId)
+      .filter((n): n is string => !!n);
+    this.#base = {
+      ...Object.fromEntries(declared.map((n) => [n, []])),
+      ...deepCopy(launchContext),
+      questionnaire,
+    };
   }
 
   #compiled(expression: string, base: string | undefined): CompiledExpression | Error {
@@ -421,6 +440,23 @@ export class ExpressionEvaluator {
       const qitem = scope.item ? this.#qitems.get(scope.item.linkId) : undefined;
       const env = { ...this.#base, ...scope.vars, resource, ...(qitem ? { qitem } : {}) };
       return { ok: true, value: fn(scope.context ?? resource, env) };
+    } catch (e) {
+      return { ok: false, error: e instanceof Error ? e.message : String(e) };
+    }
+  }
+
+  /** Evaluates with an arbitrary focus object, typed by `base` (e.g. 'QuestionnaireResponse.item'). */
+  evaluateOn(
+    expression: string,
+    focus: unknown,
+    base: string | undefined,
+    resource: QuestionnaireResponse,
+    vars: Record<string, unknown> = {},
+  ): EvalResult {
+    const fn = this.#compiled(expression, base);
+    if (fn instanceof Error) return { ok: false, error: fn.message };
+    try {
+      return { ok: true, value: fn(focus, { ...this.#base, ...vars, resource }) };
     } catch (e) {
       return { ok: false, error: e instanceof Error ? e.message : String(e) };
     }

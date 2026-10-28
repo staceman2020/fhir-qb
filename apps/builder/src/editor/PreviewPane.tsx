@@ -12,6 +12,9 @@ import { useEditorState, useStore } from '../state/hooks.js';
 import { Tabs } from '../components/Tabs.js';
 import { useEditor } from './actions-context.js';
 import { PdfPreview } from './PdfPreview.js';
+import { ExtractPreview } from './ExtractPreview.js';
+import { TestData, useTestData } from './TestData.js';
+import { createMemoryFhirClient } from '@qb/core';
 
 /** Simulated container widths: comfortably inside each breakpoint (plan §9.1 breakpoint simulator). */
 const SIM_WIDTH: Record<Breakpoint, number> = { xs: 360, sm: 560, md: 820, lg: 1100, xl: 1340 };
@@ -23,7 +26,8 @@ function WebPreview({
   onResponse: (qr: QuestionnaireResponse | undefined) => void;
 }) {
   const q = useEditorState((s) => s.questionnaire);
-  const { preview } = useEditor();
+  const { preview, questionnaireId } = useEditor();
+  const testData = useTestData(questionnaireId);
   const repo = useRepo();
   const host = useRef<HTMLDivElement>(null);
   const el = useRef<QbQuestionnaireElement | null>(null);
@@ -58,6 +62,18 @@ function WebPreview({
     if (tx) el.current?.setAttribute('terminology-server', tx);
     else el.current?.removeAttribute('terminology-server');
   }, [tx]);
+
+  // Test data: launch context + an in-browser mock FHIR server (setting them re-populates the preview).
+  useEffect(() => {
+    const node = el.current;
+    if (!node || testData === undefined) return;
+    const resources = testData?.resources ?? {};
+    node.launchContext = Object.keys(resources).length ? resources : undefined;
+    node.fhirClient = createMemoryFhirClient(
+      [...Object.values(resources), ...(testData?.serverResources ?? [])],
+      'https://test-data.invalid/fhir',
+    );
+  }, [testData]);
 
   // Debounced so typing in the editor doesn't rebuild the form on every keystroke. Answers are kept.
   useEffect(() => {
@@ -279,6 +295,8 @@ export function PreviewPane({ open, onToggle }: { open: boolean; onToggle: () =>
       ),
     },
     { id: 'pdf', label: 'PDF', content: () => <PdfPreview /> },
+    { id: 'extract', label: 'Extract', content: () => <ExtractPreview /> },
+    { id: 'testdata', label: 'Test data', content: () => <TestData /> },
     {
       id: 'issues',
       label: `Issues (${issues.length})`,

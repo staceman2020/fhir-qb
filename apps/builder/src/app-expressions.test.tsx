@@ -5,6 +5,7 @@ import { TerminologyClient, type FetchLike } from '@qb/core';
 import { STD_EXT, getExtension } from '@qb/extensions';
 import '@qb/renderer/define';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fixtures, populationData } from '@qb/test-fixtures';
 import { App } from './App.js';
 import { RepoContext } from './context.js';
 import { QbDatabase } from './db/db.js';
@@ -346,6 +347,75 @@ describe('PDF in the builder', () => {
     );
     expect(screen.getByRole('button', { name: 'Regenerate PDF' })).toBeTruthy();
   }, 30000);
+});
+
+describe('Population and extraction in the builder', () => {
+  it('uses test data to pre-fill the preview and shows the extracted Bundle', async () => {
+    const { id, user } = await open(fixtures.population());
+    // Form settings lists the declared launch context.
+    expect(
+      (screen.getByRole('combobox', { name: 'Name of launch context 1' }) as HTMLSelectElement)
+        .value,
+    ).toBe('patient');
+
+    const previewTabs = screen.getByRole('tablist', { name: 'Preview' });
+    await user.click(within(previewTabs).getByRole('tab', { name: 'Test data' }));
+    expect(screen.getByRole('note').textContent).toMatch(/made-up data only/);
+    const data = populationData();
+    const patient = screen.getByRole('textbox', { name: /%patient/ });
+    await user.click(patient);
+    await user.paste('{"resourceType":"Observation"}');
+    await user.click(screen.getByRole('button', { name: 'Save test data' }));
+    expect(screen.getByText('Expected Patient, got Observation.')).toBeTruthy();
+    await user.clear(patient);
+    await user.paste(JSON.stringify(data.find((r) => r.id === 'p1')));
+    await user.click(screen.getByRole('textbox', { name: 'Resources on the test FHIR server' }));
+    await user.paste(JSON.stringify(data.filter((r) => r.resourceType !== 'Patient')));
+    await user.click(screen.getByRole('button', { name: 'Save test data' }));
+    await waitFor(async () =>
+      expect((await repo.getTestData(id))?.resources.patient).toMatchObject({ id: 'p1' }),
+    );
+
+    await user.click(within(previewTabs).getByRole('tab', { name: 'Web' }));
+    const root = await previewRoot();
+    await waitFor(() =>
+      expect(
+        (within(root).getByRole('textbox', { name: 'Given name' }) as HTMLInputElement).value,
+      ).toBe('Aroha'),
+    );
+    expect(within(root).getAllByRole('textbox', { name: 'Condition' })).toHaveLength(2);
+
+    await user.click(within(previewTabs).getByRole('tab', { name: 'Extract' }));
+    await user.click(screen.getByRole('button', { name: 'Run extraction' }));
+    expect(await screen.findByText(/2 resources: POST Observation, PUT Patient\/p1/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Download Bundle' })).toBeTruthy();
+  }, 30000);
+
+  it('edits definition, observation and context settings', async () => {
+    const { id, user } = await open(scored());
+    const tree = screen.getByRole('tree');
+    await user.click(within(tree).getByRole('treeitem', { name: /Question 1/ }));
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Item settings' })).getByRole('tab', {
+        name: 'Advanced',
+      }),
+    );
+    await user.type(
+      screen.getByRole('textbox', { name: 'Definition' }),
+      'http://hl7.org/fhir/StructureDefinition/Observation#Observation.valueCodeableConcept',
+    );
+    await user.click(screen.getByRole('checkbox', { name: 'Save answers as Observations' }));
+    await user.click(screen.getByRole('button', { name: 'Form settings' }));
+    await user.click(screen.getByRole('button', { name: 'Add launch context' }));
+    const q = await saved(id);
+    expect(q.item![0]!.definition).toBe(
+      'http://hl7.org/fhir/StructureDefinition/Observation#Observation.valueCodeableConcept',
+    );
+    expect(getExtension(q.item![0]!, STD_EXT.observationExtract)?.valueBoolean).toBe(true);
+    expect(getExtension(q, STD_EXT.launchContext)?.extension?.[0]?.valueCoding?.code).toBe(
+      'patient',
+    );
+  });
 });
 
 describe('Terminology in the builder', () => {

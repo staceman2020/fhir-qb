@@ -76,8 +76,26 @@ export class QbQuestionnaireElement extends HTMLElement {
 
   #questionnaire: Questionnaire | undefined;
   #response: QuestionnaireResponse | undefined;
-  launchContext: Record<string, FhirResource> | undefined;
-  fhirClient: FhirClientAdapter | undefined;
+  #launchContext: Record<string, FhirResource> | undefined;
+  #fhirClient: FhirClientAdapter | undefined;
+
+  /** Resources for population by launch-context name, e.g. `{ patient }` (plan §6.5). Setting it re-populates. */
+  get launchContext(): Record<string, FhirResource> | undefined {
+    return this.#launchContext;
+  }
+  set launchContext(v: Record<string, FhirResource> | undefined) {
+    this.#launchContext = v;
+    if (this.#questionnaire) void this.#build(false);
+  }
+
+  /** Host FHIR access for x-fhir-query variables and observation-based population. Setting it re-populates. */
+  get fhirClient(): FhirClientAdapter | undefined {
+    return this.#fhirClient;
+  }
+  set fhirClient(v: FhirClientAdapter | undefined) {
+    this.#fhirClient = v;
+    if (this.#questionnaire) void this.#build(false);
+  }
   resolveCanonical: ((url: string) => Promise<FhirResource | undefined>) | undefined;
   #terminologyFetch: typeof fetch | undefined;
   #terminologyClient: TerminologyClient | undefined;

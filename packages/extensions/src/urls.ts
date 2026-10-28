@@ -85,6 +85,15 @@ export const STD_EXT = {
   answerOptionsToggleExpression: `${SDC}sdc-questionnaire-answerOptionsToggleExpression`,
   candidateExpression: `${SDC}sdc-questionnaire-candidateExpression`,
   launchContext: `${SDC}sdc-questionnaire-launchContext`,
+  // Population and extraction (plan §6.5, §6.6)
+  itemPopulationContext: `${SDC}sdc-questionnaire-itemPopulationContext`,
+  observationLinkPeriod: `${SDC}sdc-questionnaire-observationLinkPeriod`,
+  observationExtract: `${SDC}sdc-questionnaire-observationExtract`,
+  itemExtractionContext: `${SDC}sdc-questionnaire-itemExtractionContext`,
+  definitionExtract: `${SDC}sdc-questionnaire-definitionExtract`,
+  templateExtract: `${SDC}sdc-questionnaire-templateExtract`,
+  templateExtractContext: `${SDC}sdc-questionnaire-templateExtractContext`,
+  templateExtractValue: `${SDC}sdc-questionnaire-templateExtractValue`,
   constraint: `${HL7}questionnaire-constraint`,
   /** R5 back-port (plan §3.1). The extensions-pack URL is also accepted. */
   disabledDisplay: `${R5}extension-Questionnaire.item.disabledDisplay`,

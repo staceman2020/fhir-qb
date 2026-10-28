@@ -28,7 +28,14 @@ import {
   type FhirPathRuntime,
 } from './expressions.js';
 import { messagesFor } from './i18n.js';
+import type { ExtractResult } from './extraction.js';
 import { lintQuestionnaire } from './lint.js';
+import {
+  prefetchPopulation,
+  queryKey,
+  responseBaseFromContext,
+  type Prefetched,
+} from './population.js';
 import { resolveOptions, type AnswerOptionView, type OptionsResult } from './options.js';
 import { buildResponse } from './response.js';
 import {
@@ -84,7 +91,13 @@ export interface FormEngine {
   validate(): ValidationIssue[];
   /** Validation issues for the current state without switching on live validation. */
   collectIssues(): ValidationIssue[];
+  /** Extraction (plan §6.6) as a transaction Bundle. */
   extract(): Promise<Bundle>;
+  /** Extraction with problems reported (unknown definition paths, failed expressions, …). */
+  extractWithIssues(opts?: {
+    uuid?: () => string;
+    responseReference?: string;
+  }): Promise<ExtractResult>;
 
   /** Loads FHIRPath support if the form didn't need it (e.g. for the builder's expression editor). */
   ensureExpressions(): Promise<void>;
@@ -119,11 +132,19 @@ export async function createFormEngine(
   questionnaire: Questionnaire,
   options: EngineOptions = {},
 ): Promise<FormEngine> {
-  const fhirPath =
-    questionnaire?.resourceType === 'Questionnaire' && usesExpressions(questionnaire)
-      ? await loadFhirPath()
+  const isQ = questionnaire?.resourceType === 'Questionnaire';
+  const fhirPath = isQ && usesExpressions(questionnaire) ? await loadFhirPath() : undefined;
+  // Population (plan §6.5): fetch x-fhir-query variables and linked observations up front.
+  let prefetched: (Prefetched & { issues: ValidationIssue[] }) | undefined;
+  if (isQ && !options.response) {
+    const index = buildDefinitionIndex(questionnaire);
+    const evaluator = fhirPath
+      ? new ExpressionEvaluator(fhirPath, index, options.launchContext)
       : undefined;
-  return createFormEngineSync(questionnaire, options, fhirPath);
+    const issues: ValidationIssue[] = [];
+    prefetched = { ...(await prefetchPopulation(index, evaluator, options, issues)), issues };
+  }
+  return createFormEngineSync(questionnaire, options, fhirPath, prefetched);
 }
 
 /**
@@ -134,6 +155,7 @@ export function createFormEngineSync(
   questionnaire: Questionnaire,
   options: EngineOptions = {},
   fhirPath?: FhirPathRuntime,
+  prefetched?: Prefetched & { issues?: ValidationIssue[] },
 ): FormEngine {
   if (questionnaire?.resourceType !== 'Questionnaire')
     throw new TypeError('Expected a FHIR R4 Questionnaire resource');
@@ -153,6 +175,10 @@ export function createFormEngineSync(
       message: 'This form uses expressions, but FHIRPath support was not loaded.',
     });
 
+  for (const i of prefetched?.issues ?? []) loadIssues.push(i);
+  /** Response fields kept from a resumed response, or subject/encounter/author from the launch context. */
+  const responseBase = options.response ?? responseBaseFromContext(options.launchContext);
+
   /** Calculated items the user has typed over; not recalculated unless read-only (plan §6.4). */
   const overridden = new Set<string>();
   let snapshot: FormSnapshot;
@@ -162,7 +188,7 @@ export function createFormEngineSync(
 
   interface EvalContext {
     qr: QuestionnaireResponse;
-    eval(expression: string, path: string | undefined): EvalResult;
+    eval(expression: string, path: string | undefined, extra?: Record<string, unknown>): EvalResult;
   }
 
   const makeContext = (
@@ -177,7 +203,7 @@ export function createFormEngineSync(
     const qr = buildResponse(
       definitions,
       { items, enabled },
-      options.response,
+      responseBase,
       { authored: new Date().toISOString() },
       map,
     );
@@ -202,8 +228,9 @@ export function createFormEngineSync(
       for (const v of holder ? variablesOf(holder) : []) {
         if (!v.expression) continue;
         if (v.language && v.language !== FHIRPATH) {
-          // x-fhir-query variables arrive with population (Phase 6).
-          vars[v.name] = [];
+          // x-fhir-query: resolved once during population (createFormEngine).
+          const holderId = path ? nodes.get(path)?.linkId : undefined;
+          vars[v.name] = prefetched?.queries.get(queryKey(holderId, v.name)) ?? [];
           continue;
         }
         const r = ev.evaluate(v.expression, qr, { ...scope, vars });
@@ -221,8 +248,11 @@ export function createFormEngineSync(
     };
     return {
       qr,
-      eval: (expression, path) =>
-        ev.evaluate(expression, qr, { ...scopeFor(path), vars: varsFor(path) }),
+      eval: (expression, path, extra) =>
+        ev.evaluate(expression, qr, {
+          ...scopeFor(path),
+          vars: extra ? { ...varsFor(path), ...extra } : varsFor(path),
+        }),
     };
   };
 
@@ -444,6 +474,96 @@ export function createFormEngineSync(
     };
   };
 
+  /** Variables from itemPopulationContext for each populated group instance (instance path → vars). */
+  const populationVars = new Map<string, Record<string, unknown>>();
+  const extraFor = (path: string): Record<string, unknown> => {
+    let out: Record<string, unknown> = {};
+    for (const [p, v] of populationVars)
+      if (path === p || path.startsWith(`${p}/`)) out = { ...out, ...v };
+    return out;
+  };
+
+  /**
+   * itemPopulationContext (plan §6.5): a group gets one instance per resource the expression
+   * returns, and `%name` is that resource inside the instance. Outer contexts are applied first.
+   */
+  const applyPopulationContexts = (items: readonly ItemNode[]): readonly ItemNode[] => {
+    populationVars.clear();
+    if (!evaluator) return items;
+    let current = items;
+    const done = new Set<string>();
+    for (;;) {
+      const nodes = indexNodes(current);
+      const target = [...nodes.values()].find((n) => {
+        const ext = getExtension(
+          definitions.byLinkId.get(n.linkId)!.item,
+          STD_EXT.itemPopulationContext,
+        );
+        return ext && fhirPathOf(ext) && !done.has(`${parentPath(n.path) ?? ''}\u0000${n.linkId}`);
+      });
+      if (!target) return current;
+      const def = definitions.byLinkId.get(target.linkId)!;
+      const ext = getExtension(def.item, STD_EXT.itemPopulationContext)!;
+      const parent = parentPath(target.path);
+      done.add(`${parent ?? ''}\u0000${target.linkId}`);
+      const ctx = makeContext(
+        current,
+        nodes,
+        computeEnablement(definitions, current, nodes).enabled,
+        new Map(),
+      )!;
+      const r = ctx.eval(fhirPathOf(ext)!, target.path, extraFor(target.path));
+      if (!r.ok) {
+        loadIssues.push({
+          severity: 'error',
+          code: 'population-error',
+          linkId: def.linkId,
+          message: `itemPopulationContext on "${def.linkId}": ${r.error}`,
+        });
+        continue;
+      }
+      const resources = r.value;
+      const count = def.item.repeats ? Math.max(1, resources.length) : 1;
+      let paths: string[] = [];
+      current = updateChildren(current, parent, (children) => {
+        const first = children.findIndex((c) => c.linkId === target.linkId);
+        const rest = children.filter((c) => c.linkId !== target.linkId);
+        const fresh = Array.from({ length: count }, (_, i) =>
+          createNode(def, parent, i, { resume: false, unmatched: new Set() }),
+        );
+        paths = fresh.map((f) => f.path);
+        return [...rest.slice(0, first), ...fresh, ...rest.slice(first)];
+      });
+      const name = ext.valueExpression?.name;
+      // With no resources the blank instance still defines %name (empty), so its expressions don't fail.
+      paths.forEach((p, i) => {
+        if (name)
+          populationVars.set(p, {
+            ...extraFor(p),
+            [name]: resources[i] !== undefined ? [resources[i]] : [],
+          });
+      });
+    }
+  };
+
+  /** observationLinkPeriod answers fill questions that are still empty. */
+  const applyObservations = (items: readonly ItemNode[]): readonly ItemNode[] => {
+    let current = items;
+    for (const node of indexNodes(items).values()) {
+      const found = prefetched?.observations.get(node.linkId);
+      if (!found?.length || node.answers.length) continue;
+      const item = definitions.byLinkId.get(node.linkId)!.item;
+      current = updateNode(current, node.path, (n) => ({
+        ...n,
+        answers: item.repeats ? found : found.slice(0, 1),
+      }));
+    }
+    return current;
+  };
+
+  const populate = (items: readonly ItemNode[]) =>
+    applyObservations(applyInitialExpressions(applyPopulationContexts(items)));
+
   /** initialExpression for nodes without answers, in document order (plan §6.5). */
   const applyInitialExpressions = (
     items: readonly ItemNode[],
@@ -464,7 +584,7 @@ export function createFormEngineSync(
         computeEnablement(definitions, current, nodes).enabled,
         issues,
       )!;
-      const r = ctx.eval(expr, node.path);
+      const r = ctx.eval(expr, node.path, extraFor(node.path));
       if (!r.ok)
         loadIssues.push({
           severity: 'error',
@@ -488,7 +608,7 @@ export function createFormEngineSync(
         linkId,
         message: `Response item "${linkId}" is not in the Questionnaire and was dropped.`,
       });
-    return options.response ? items : applyInitialExpressions(items);
+    return options.response ? items : populate(items);
   };
   snapshot = derive(initial(), 0, new Map());
 
@@ -631,10 +751,10 @@ export function createFormEngineSync(
       validating = false;
       overridden.clear();
       const { items } = buildTree(definitions, options.response);
-      commit(options.response ? items : applyInitialExpressions(items), new Map());
+      commit(options.response ? items : populate(items), new Map());
     },
 
-    getResponse: (opts) => buildResponse(definitions, snapshot, options.response, opts),
+    getResponse: (opts) => buildResponse(definitions, snapshot, responseBase, opts),
 
     validate() {
       validating = true;
@@ -649,7 +769,37 @@ export function createFormEngineSync(
 
     collectIssues: () => issuesFor(derived, snapshot.inputErrors),
 
-    extract: () => Promise.reject(new NotImplementedError('Extraction (plan §6.6, Phase 6)')),
+    extract: async () => (await engine.extractWithIssues()).bundle,
+
+    async extractWithIssues(opts = {}) {
+      // Definition-based extraction needs the R4 model from fhirpath.js, so load it on demand.
+      // Lazy: extraction code is only loaded when a host extracts (bundle budget, plan §11.4).
+      const [fp, { extractResources }] = await Promise.all([
+        loadFhirPath(),
+        import('./extraction.js'),
+      ]);
+      evaluator ??= new ExpressionEvaluator(fp, definitions, options.launchContext);
+      const responseItems = new Map<string, QuestionnaireResponseItem>();
+      const response = buildResponse(
+        definitions,
+        snapshot,
+        responseBase,
+        { status: 'completed' },
+        responseItems,
+      );
+      return extractResources({
+        definitions,
+        items: snapshot.items,
+        enabled: snapshot.enabled,
+        response,
+        responseItems,
+        evaluator,
+        model: fp.model,
+        features,
+        ...(opts.uuid ? { uuid: opts.uuid } : {}),
+        ...(opts.responseReference ? { responseReference: opts.responseReference } : {}),
+      });
+    },
 
     async ensureExpressions() {
       if (evaluator) return;

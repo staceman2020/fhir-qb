@@ -69,3 +69,17 @@ window.open(URL.createObjectURL(blob));
 ```
 
 The PDF uses the `print-breakpoint` attribute (or the form's `qb-layout-print-breakpoint`, default `md`) for its column layout. Value sets with more than 30 codes print as a write-in line naming the list.
+
+## Pre-filling and extraction
+
+```js
+form.launchContext = { patient }; // %patient in expressions
+form.fhirClient = {
+  baseUrl,
+  fetch: (url, init) => fetch(url, { ...init, headers: { ...init?.headers, Authorization } }),
+};
+form.questionnaire = q; // population runs when the form loads
+const bundle = await form.extract(); // transaction Bundle
+```
+
+`createMemoryFhirClient(resources)` from `@qb/core` gives an in-memory FHIR server for tests and demos.

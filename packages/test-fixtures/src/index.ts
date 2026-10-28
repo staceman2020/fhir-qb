@@ -1,4 +1,9 @@
-import type { Questionnaire, QuestionnaireItem, QuestionnaireResponse } from 'fhir/r4';
+import type {
+  FhirResource,
+  Questionnaire,
+  QuestionnaireItem,
+  QuestionnaireResponse,
+} from 'fhir/r4';
 import advancedRendering from '../questionnaires/advanced-rendering.json' with { type: 'json' };
 import allTypes from '../questionnaires/all-types.json' with { type: 'json' };
 import channelContent from '../questionnaires/channel-content.json' with { type: 'json' };
@@ -6,6 +11,8 @@ import enableWhen from '../questionnaires/enable-when.json' with { type: 'json' 
 import layoutGrid from '../questionnaires/layout-grid.json' with { type: 'json' };
 import nzPatient from '../questionnaires/nz-patient.json' with { type: 'json' };
 import phq9 from '../questionnaires/phq-9.json' with { type: 'json' };
+import population from '../questionnaires/population.json' with { type: 'json' };
+import populationData_ from '../questionnaires/population-data.json' with { type: 'json' };
 import phq9Golden from '../golden/phq-9.json' with { type: 'json' };
 import advancedGolden from '../golden/advanced-rendering.json' with { type: 'json' };
 import repeats from '../questionnaires/repeats.json' with { type: 'json' };
@@ -25,7 +32,12 @@ export const fixtures = {
   nzPatient: q(nzPatient),
   phq9: q(phq9),
   advancedRendering: q(advancedRendering),
+  population: q(population),
 } as const;
+
+/** Resources for the mock FHIR server used by the population fixture (patients p1, p2). */
+export const populationData = (): FhirResource[] =>
+  JSON.parse(JSON.stringify(populationData_)) as FhirResource[];
 
 export interface GoldenCase {
   /** linkId → answer code to select. */

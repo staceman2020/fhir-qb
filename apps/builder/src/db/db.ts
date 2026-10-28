@@ -27,10 +27,14 @@ export interface ResponseRecord {
   response: QuestionnaireResponse;
 }
 
+/** Builder test data for population (plan §6.5): made-up resources only — stored unencrypted. */
 export interface LaunchContextRecord {
   id: string;
   questionnaireId: string;
+  /** Launch context resources by name (e.g. patient). */
   resources: Record<string, FhirResource>;
+  /** Further resources served by the in-browser mock FHIR server (x-fhir-query, observations). */
+  serverResources?: FhirResource[];
 }
 
 export interface SettingRecord {
