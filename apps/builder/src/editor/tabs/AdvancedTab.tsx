@@ -17,6 +17,7 @@ import {
   type Duration,
 } from '../../model/data.js';
 import { ExpressionEditor } from '../expression-ui.js';
+import { SubQuestionnaire } from '../SubQuestionnaire.js';
 import { useEditor } from '../actions-context.js';
 import {
   Checkbox,
@@ -261,6 +262,12 @@ export function AdvancedTab({ item }: { item: QuestionnaireItem }) {
             }, 'supportLink')
           }
         />
+      )}
+      {item.type === 'display' && (
+        <>
+          <h3 style={{ marginTop: '1rem' }}>Modular forms</h3>
+          <SubQuestionnaire item={item} />
+        </>
       )}
       <h3 style={{ marginTop: '1rem' }}>Data (pre-filling and extraction)</h3>
       {isQuestionType(item.type) && (

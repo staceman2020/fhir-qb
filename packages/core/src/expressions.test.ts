@@ -115,6 +115,40 @@ describe('variables and scope', () => {
     expect(answers(e, `${second}/double[0]`)).toEqual([{ valueInteger: 10 }]);
   });
 
+  it('keeps FHIR types in variables for date and quantity arithmetic', async () => {
+    const q = form(
+      [
+        { linkId: 'dob', type: 'date' },
+        { linkId: 'w', type: 'quantity' },
+        {
+          linkId: 'adult',
+          type: 'boolean',
+          readOnly: true,
+          extension: [
+            ext(STD_EXT.calculatedExpression, 'iif(%dob.exists(), %dob <= today() - 18 years, {})'),
+          ],
+        },
+        {
+          linkId: 'heavy',
+          type: 'boolean',
+          readOnly: true,
+          extension: [ext(STD_EXT.calculatedExpression, "iif(%w.exists(), %w > 100 'kg', {})")],
+        },
+      ],
+      [variable('dob', answerOf('dob')), variable('w', answerOf('w'))],
+    );
+    const e = await make(q);
+    e.setAnswer('dob[0]', [{ valueDate: '2000-01-01' }]);
+    e.setAnswer('w[0]', [
+      {
+        valueQuantity: { value: 120, unit: 'kg', system: 'http://unitsofmeasure.org', code: 'kg' },
+      },
+    ]);
+    expect(e.getSnapshot().expressionIssues).toEqual([]);
+    expect(answers(e, 'adult[0]')).toEqual([{ valueBoolean: true }]);
+    expect(answers(e, 'heavy[0]')).toEqual([{ valueBoolean: true }]);
+  });
+
   it('makes launch context available as variables', async () => {
     const q = form([
       {

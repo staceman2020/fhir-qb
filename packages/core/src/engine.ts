@@ -29,6 +29,7 @@ import {
 } from './expressions.js';
 import { messagesFor } from './i18n.js';
 import type { ExtractResult } from './extraction.js';
+import { usesSubQuestionnaires } from './assemble.js';
 import { lintQuestionnaire } from './lint.js';
 import {
   prefetchPopulation,
@@ -129,22 +130,39 @@ function sameEnabled(a: ReadonlyMap<string, boolean>, b: ReadonlyMap<string, boo
  * lazy-loaded only when the form contains expressions.
  */
 export async function createFormEngine(
-  questionnaire: Questionnaire,
+  input: Questionnaire,
   options: EngineOptions = {},
 ): Promise<FormEngine> {
-  const isQ = questionnaire?.resourceType === 'Questionnaire';
-  const fhirPath = isQ && usesExpressions(questionnaire) ? await loadFhirPath() : undefined;
+  if (input?.resourceType !== 'Questionnaire') return createFormEngineSync(input, options);
+  // Modular forms (plan §6.7) are assembled first, when the host can resolve sub-questionnaires.
+  const issues: ValidationIssue[] = [];
+  let questionnaire = input;
+  if (usesSubQuestionnaires(input)) {
+    if (options.resolveCanonical) {
+      // Lazy: assembly code is only needed for modular forms (bundle budget, plan §11.4).
+      const { assembleQuestionnaire } = await import('./assemble.js');
+      const r = await assembleQuestionnaire(input, { resolveCanonical: options.resolveCanonical });
+      questionnaire = r.questionnaire;
+      issues.push(...r.issues);
+    } else
+      issues.push({
+        severity: 'warning',
+        code: 'modular-not-assembled',
+        message:
+          'This form includes sub-questionnaires, but no resolveCanonical was provided to load them.',
+      });
+  }
+  const fhirPath = usesExpressions(questionnaire) ? await loadFhirPath() : undefined;
   // Population (plan §6.5): fetch x-fhir-query variables and linked observations up front.
-  let prefetched: (Prefetched & { issues: ValidationIssue[] }) | undefined;
-  if (isQ && !options.response) {
+  let prefetched: Prefetched = { queries: new Map(), observations: new Map() };
+  if (!options.response) {
     const index = buildDefinitionIndex(questionnaire);
     const evaluator = fhirPath
       ? new ExpressionEvaluator(fhirPath, index, options.launchContext)
       : undefined;
-    const issues: ValidationIssue[] = [];
-    prefetched = { ...(await prefetchPopulation(index, evaluator, options, issues)), issues };
+    prefetched = await prefetchPopulation(index, evaluator, options, issues);
   }
-  return createFormEngineSync(questionnaire, options, fhirPath, prefetched);
+  return createFormEngineSync(questionnaire, options, fhirPath, { ...prefetched, issues });
 }
 
 /**
@@ -233,7 +251,8 @@ export function createFormEngineSync(
           vars[v.name] = prefetched?.queries.get(queryKey(holderId, v.name)) ?? [];
           continue;
         }
-        const r = ev.evaluate(v.expression, qr, { ...scope, vars });
+        // Typed (raw) results so variables keep FHIR types for date/quantity arithmetic.
+        const r = ev.evaluate(v.expression, qr, { ...scope, vars }, { raw: true });
         if (!r.ok)
           issues.set(`var:${key}:${v.name}`, {
             severity: 'error',

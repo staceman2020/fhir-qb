@@ -6,13 +6,18 @@
   "type": "module",
   "sideEffects": false,
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./adaptive": "./src/adaptive.ts"
   },
   "publishConfig": {
     "exports": {
       ".": {
         "types": "./dist/types/index.d.ts",
         "default": "./dist/index.js"
+      },
+      "./adaptive": {
+        "types": "./dist/types/adaptive.d.ts",
+        "default": "./dist/adaptive.js"
       }
     }
   },

@@ -12,6 +12,11 @@ import layoutGrid from '../questionnaires/layout-grid.json' with { type: 'json' 
 import nzPatient from '../questionnaires/nz-patient.json' with { type: 'json' };
 import phq9 from '../questionnaires/phq-9.json' with { type: 'json' };
 import population from '../questionnaires/population.json' with { type: 'json' };
+import modularRoot from '../questionnaires/modular/root.json' with { type: 'json' };
+import modularDemographics from '../questionnaires/modular/demographics.json' with { type: 'json' };
+import modularContact from '../questionnaires/modular/contact.json' with { type: 'json' };
+import modularAddress from '../questionnaires/modular/address.json' with { type: 'json' };
+import modularGolden from '../golden/modular-assembled.json' with { type: 'json' };
 import populationData_ from '../questionnaires/population-data.json' with { type: 'json' };
 import phq9Golden from '../golden/phq-9.json' with { type: 'json' };
 import advancedGolden from '../golden/advanced-rendering.json' with { type: 'json' };
@@ -81,3 +86,23 @@ export function stressQuestionnaire(count = 1000): Questionnaire {
     item: groups,
   };
 }
+
+/** SDC-style modular forms: a root and the sub-questionnaires it includes (plan §6.7). */
+export const modular = {
+  root: q(modularRoot),
+  library: (): Questionnaire[] =>
+    [modularDemographics, modularContact, modularAddress].map(
+      (x) => JSON.parse(JSON.stringify(x)) as Questionnaire,
+    ),
+  /** resolveCanonical over the library (matches `url` and, if given, `|version`). */
+  resolver: () => {
+    const lib = modular.library();
+    return async (canonical: string) => {
+      const [url, version] = canonical.split('|');
+      return lib.find((x) => x.url === url && (!version || x.version === version));
+    };
+  },
+  assembled: (): Questionnaire =>
+    (JSON.parse(JSON.stringify(modularGolden)) as { questionnaire: Questionnaire }).questionnaire,
+};
+export { mockAdaptiveServer } from './adaptive.js';

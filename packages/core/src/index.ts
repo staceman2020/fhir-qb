@@ -15,3 +15,5 @@ export * from './i18n.js';
 export * from './fhirClient.js';
 export * from './population.js';
 export * from './extraction.js';
+export * from './assemble.js';
+export * from './adaptive.js';

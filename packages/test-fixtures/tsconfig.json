@@ -1,7 +1,7 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": { "outDir": "dist/types", "rootDir": "." },
-  "include": ["src", "questionnaires/*.json", "golden/*.json"],
+  "include": ["src", "questionnaires/*.json", "questionnaires/modular/*.json", "golden/*.json"],
   "exclude": ["src/**/*.test.ts"],
   "references": [{ "path": "../extensions" }]
 }

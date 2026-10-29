@@ -12,6 +12,7 @@ import { useEditorState, useStore } from '../state/hooks.js';
 import { Tabs } from '../components/Tabs.js';
 import { useEditor } from './actions-context.js';
 import { PdfPreview } from './PdfPreview.js';
+import { VersionDiff } from './VersionDiff.js';
 import { ExtractPreview } from './ExtractPreview.js';
 import { TestData, useTestData } from './TestData.js';
 import { createMemoryFhirClient } from '@qb/core';
@@ -62,6 +63,11 @@ function WebPreview({
     if (tx) el.current?.setAttribute('terminology-server', tx);
     else el.current?.removeAttribute('terminology-server');
   }, [tx]);
+
+  // Modular forms: sub-questionnaires come from the local library (plan §6.7).
+  useEffect(() => {
+    if (el.current) el.current.resolveCanonical = (c) => repo.findByCanonical(c);
+  }, [repo]);
 
   // Test data: launch context + an in-browser mock FHIR server (setting them re-populates the preview).
   useEffect(() => {
@@ -158,6 +164,7 @@ function History() {
   const q = useEditorState((s) => s.questionnaire);
   const versions = useLiveQuery(() => repo.listVersions(questionnaireId), [repo, questionnaireId]);
   const [label, setLabel] = useState('');
+  const [comparing, setComparing] = useState<number>();
 
   return (
     <>
@@ -211,6 +218,13 @@ function History() {
                   <div className="toolbar">
                     <button
                       type="button"
+                      onClick={() => setComparing(comparing === v.seq ? undefined : v.seq)}
+                      aria-expanded={comparing === v.seq}
+                    >
+                      Compare with current <span className="visually-hidden">{v.label}</span>
+                    </button>
+                    <button
+                      type="button"
                       onClick={() => {
                         if (
                           !window.confirm(
@@ -252,6 +266,14 @@ function History() {
             ))}
           </tbody>
         </table>
+      )}
+      {comparing !== undefined && versions?.find((v) => v.seq === comparing) && (
+        <VersionDiff
+          before={versions.find((v) => v.seq === comparing)!.questionnaire}
+          after={q}
+          label={versions.find((v) => v.seq === comparing)!.label}
+          onClose={() => setComparing(undefined)}
+        />
       )}
     </>
   );

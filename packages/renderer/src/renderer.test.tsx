@@ -1,8 +1,8 @@
-import { act, render, screen, waitFor, within } from '@testing-library/react';
+import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { Questionnaire, QuestionnaireResponse } from 'fhir/r4';
 import { createFormEngineSync, createMemoryFhirClient } from '@qb/core';
-import { fixtures, populationData } from '@qb/test-fixtures';
+import { fixtures, mockAdaptiveServer, modular, populationData } from '@qb/test-fixtures';
 import { describe, expect, it, vi } from 'vitest';
 import { QuestionnaireForm } from './components/QuestionnaireForm.js';
 import { fromLocalDateTime, toLocalDateTime } from './components/controls.js';
@@ -380,6 +380,79 @@ describe('<qb-questionnaire>', () => {
         (within(root).getByRole('textbox', { name: 'Given name' }) as HTMLInputElement).value,
       ).toBe('Tama'),
     );
+    el.remove();
+  });
+
+  it('assembles modular forms with resolveCanonical', async () => {
+    const el = document.createElement('qb-questionnaire');
+    el.resolveCanonical = modular.resolver();
+    const ready = new Promise((r) => el.addEventListener('qb-ready', r, { once: true }));
+    document.body.append(el);
+    await act(async () => {
+      el.questionnaire = modular.root();
+      await ready;
+    });
+    const root = el.shadowRoot! as unknown as HTMLElement;
+    expect(within(root).getByRole('textbox', { name: 'Name' })).toBeTruthy();
+    expect(within(root).queryByText(/Insert http/)).toBeNull();
+    expect(el.engine!.questionnaire.item?.some((i) => i.linkId === 'demo-dob')).toBe(true);
+    el.remove();
+  });
+
+  it('runs an adaptive form question by question', async () => {
+    const el = document.createElement('qb-questionnaire');
+    el.fhirClient = mockAdaptiveServer();
+    document.body.append(el);
+    const submitted = vi.fn();
+    el.addEventListener('qb-submit', submitted);
+    await act(async () => el.startAdaptive('http://example.org/fhir/qb/Questionnaire/wellbeing'));
+    const root = el.shadowRoot! as unknown as HTMLElement;
+    const user = userEvent.setup();
+    await waitFor(() =>
+      expect(within(root).getByRole('group', { name: /How are you feeling today/ })).toBeTruthy(),
+    );
+    expect(within(root).queryByRole('button', { name: 'Submit' })).toBeNull();
+    // A required question must be answered before asking for the next one.
+    await user.click(within(root).getByRole('button', { name: 'Next question' }));
+    await waitFor(() => expect(within(root).getByText('There is a problem')).toBeTruthy());
+    await user.click(within(root).getByRole('radio', { name: 'Not good' }));
+    await user.click(within(root).getByRole('button', { name: 'Next question' }));
+    const sleep = await within(root).findByRole('group', { name: /trouble sleeping/ });
+    await waitFor(() =>
+      expect(root.activeElement).toBe(within(sleep).getByRole('radio', { name: 'Yes' })),
+    );
+    await user.click(within(sleep).getByRole('radio', { name: 'Yes' }));
+    await user.click(within(root).getByRole('button', { name: 'Next question' }));
+    const hoursBox = await within(root).findByRole('textbox', { name: /hours/ });
+    // user-event typing inside a shadow root does not reach React's onChange in jsdom (a
+    // user-event limitation; clicks work). fireEvent.change exercises the same handler.
+    fireEvent.change(hoursBox, { target: { value: '5' } });
+    await user.click(within(root).getByRole('button', { name: 'Next question' }));
+    const submit = await within(root).findByRole('button', { name: 'Submit' });
+    await user.click(submit);
+    const qr = (submitted.mock.calls[0]![0] as CustomEvent).detail.response;
+    expect(qr.status).toBe('completed');
+    expect(qr.questionnaire).toBe('#adaptive');
+    expect(qr.contained[0].item.map((i: { linkId: string }) => i.linkId)).toEqual([
+      'mood',
+      'sleep',
+      'hours',
+    ]);
+    expect(qr.item.map((i: { linkId: string }) => i.linkId)).toEqual(['mood', 'sleep', 'hours']);
+    el.remove();
+  }, 20000);
+
+  it('reports adaptive service errors', async () => {
+    const el = document.createElement('qb-questionnaire');
+    el.fhirClient = {
+      baseUrl: 'https://x',
+      fetch: async () => ({ ok: false, status: 503, json: async () => ({}) }),
+    };
+    document.body.append(el);
+    const errors = vi.fn();
+    el.addEventListener('qb-error', errors);
+    await act(async () => el.startAdaptive('http://example.org/a'));
+    expect(errors).toHaveBeenCalledOnce();
     el.remove();
   });
 

@@ -27,6 +27,9 @@ Automated: axe-core in Vitest browser mode for every fixture × breakpoint (to b
 - [ ] Autosave status is a `role="status"` region.
 - [ ] Light and dark themes meet contrast; forced-colors keeps the selection visible.
 
+- [ ] Adaptive forms: "Next question" checks the current question first; focus moves to each new question; "Loading the next question…" is announced.
+- [ ] In real browsers (Chromium, Firefox, WebKit), typing in text and number fields inside `<qb-questionnaire>` updates answers. jsdom tests cannot cover this because user-event typing does not reach React inside shadow roots; add Vitest browser-mode tests.
+
 ## Screen reader passes
 
 - [ ] NVDA + Firefox

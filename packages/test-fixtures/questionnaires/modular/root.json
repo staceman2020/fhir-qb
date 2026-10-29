@@ -1,0 +1,66 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "modular-root",
+  "url": "http://example.org/fhir/qb/Questionnaire/modular-root",
+  "version": "1.0.0",
+  "status": "draft",
+  "title": "Clinic intake (modular)",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assemble-expectation",
+      "valueCode": "assemble-root"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "intro",
+      "type": "display",
+      "text": "Welcome to the clinic."
+    },
+    {
+      "linkId": "sub-demo",
+      "type": "display",
+      "text": "Insert http://example.org/fhir/qb/Questionnaire/modular-demographics|1.0.0",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-subQuestionnaire",
+          "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-demographics|1.0.0"
+        },
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-linkIdPrefix",
+          "valueString": "demo-"
+        }
+      ]
+    },
+    {
+      "linkId": "visit",
+      "type": "group",
+      "text": "Your visit",
+      "item": [
+        {
+          "linkId": "reason",
+          "type": "string",
+          "text": "Reason for visit"
+        }
+      ]
+    },
+    {
+      "linkId": "sub-contact",
+      "type": "display",
+      "text": "Insert http://example.org/fhir/qb/Questionnaire/modular-contact",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-subQuestionnaire",
+          "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-contact"
+        }
+      ],
+      "enableWhen": [
+        {
+          "question": "reason",
+          "operator": "exists",
+          "answerBoolean": true
+        }
+      ]
+    }
+  ]
+}

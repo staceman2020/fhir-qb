@@ -127,6 +127,19 @@ export function FormSettings() {
         }
       />
       <TestConnection server={tx || defaultServer} />
+      <h3>Modular forms</h3>
+      <SelectField
+        label="How this form can be used"
+        value={getExtension(q, STD_EXT.assembleExpectation)?.valueCode ?? ''}
+        options={[
+          { value: '', label: 'Not specified' },
+          { value: 'independent', label: 'On its own only' },
+          { value: 'assemble-root', label: 'As a main form that includes others' },
+          { value: 'assemble-child', label: 'Only inside another form' },
+          { value: 'assemble-root-or-child', label: 'As a main form or inside another form' },
+        ]}
+        onChange={(v) => setExt(STD_EXT.assembleExpectation, v ? { valueCode: v } : undefined)}
+      />
       <h3>Launch context</h3>
       <LaunchContexts />
       <h3>Variables</h3>

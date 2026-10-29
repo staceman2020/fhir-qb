@@ -94,6 +94,11 @@ export const STD_EXT = {
   templateExtract: `${SDC}sdc-questionnaire-templateExtract`,
   templateExtractContext: `${SDC}sdc-questionnaire-templateExtractContext`,
   templateExtractValue: `${SDC}sdc-questionnaire-templateExtractValue`,
+  // Modular forms (plan §6.7)
+  subQuestionnaire: `${SDC}sdc-questionnaire-subQuestionnaire`,
+  assembleExpectation: `${SDC}sdc-questionnaire-assemble-expectation`,
+  linkIdPrefix: `${SDC}sdc-questionnaire-linkIdPrefix`,
+  assembledFrom: `${SDC}sdc-questionnaire-assembledFrom`,
   constraint: `${HL7}questionnaire-constraint`,
   /** R5 back-port (plan §3.1). The extensions-pack URL is also accepted. */
   disabledDisplay: `${R5}extension-Questionnaire.item.disabledDisplay`,

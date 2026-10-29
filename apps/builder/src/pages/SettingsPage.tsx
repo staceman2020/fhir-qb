@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useRepo } from '../context.js';
 import { SETTINGS } from '../db/repository.js';
 import { TextField } from '../components/fields.js';
+import { download } from '../download.js';
 import { TestConnection } from '../components/TestConnection.js';
 
 const fmtBytes = (n: number) =>
@@ -15,6 +16,7 @@ export function SettingsPage() {
   const repo = useRepo();
   const [server, setServer] = useState('');
   const [saved, setSaved] = useState('');
+  const [backupStatus, setBackupStatus] = useState('');
   const [error, setError] = useState<string>();
   const [estimate, setEstimate] = useState<{ usage: number; quota: number }>();
   const [persisted, setPersisted] = useState<boolean>();
@@ -112,6 +114,63 @@ export function SettingsPage() {
         >
           Clear terminology cache
         </button>
+      </section>
+      <section aria-labelledby="backup-heading">
+        <h2 id="backup-heading">Backup</h2>
+        <p>
+          Download everything (forms, saved versions, test data and settings) as one file, or
+          restore from such a file. Keep backups somewhere safe: they may contain test data.
+        </p>
+        <div className="row">
+          <button
+            type="button"
+            onClick={async () => {
+              const b = await repo.exportBackup();
+              download(
+                `qb-backup-${b.exportedAt.slice(0, 10)}.json`,
+                `${JSON.stringify(b, null, 2)}\n`,
+                'application/json',
+              );
+              setBackupStatus(
+                `Backup downloaded: ${b.questionnaires.length} form${b.questionnaires.length === 1 ? '' : 's'}.`,
+              );
+            }}
+          >
+            Download backup
+          </button>
+          <div className="field">
+            <label htmlFor="restore-file">Restore from a backup file</label>
+            <input
+              id="restore-file"
+              type="file"
+              accept=".json,application/json"
+              onChange={async (e) => {
+                const input = e.currentTarget;
+                const file = input.files?.[0];
+                if (!file) return;
+                try {
+                  const data = JSON.parse(await file.text()) as { questionnaires?: unknown[] };
+                  const n = Array.isArray(data.questionnaires) ? data.questionnaires.length : 0;
+                  if (
+                    !window.confirm(
+                      `Restore ${n} form${n === 1 ? '' : 's'} from this backup? Forms with the same id are replaced.`,
+                    )
+                  )
+                    return;
+                  const r = await repo.importBackup(data);
+                  setBackupStatus(
+                    `Restored ${r.forms} form${r.forms === 1 ? '' : 's'} and ${r.versions} saved version${r.versions === 1 ? '' : 's'}.`,
+                  );
+                } catch (err) {
+                  setBackupStatus(`Could not restore: ${(err as Error).message}`);
+                } finally {
+                  input.value = '';
+                }
+              }}
+            />
+          </div>
+        </div>
+        <p role="status">{backupStatus}</p>
       </section>
     </div>
   );

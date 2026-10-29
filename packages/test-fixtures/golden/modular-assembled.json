@@ -1,0 +1,178 @@
+{
+  "_comment": "Hand-written expected $assemble output for questionnaires/modular/root.json (SDC modular forms rules).",
+  "questionnaire": {
+    "resourceType": "Questionnaire",
+    "id": "modular-root",
+    "url": "http://example.org/fhir/qb/Questionnaire/modular-root",
+    "version": "1.0.0",
+    "status": "draft",
+    "title": "Clinic intake (modular)",
+    "extension": [
+      {
+        "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-launchContext",
+        "extension": [
+          {
+            "url": "name",
+            "valueCoding": {
+              "system": "http://hl7.org/fhir/uv/sdc/CodeSystem/launchContext",
+              "code": "patient"
+            }
+          },
+          {
+            "url": "type",
+            "valueCode": "Patient"
+          }
+        ]
+      },
+      {
+        "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assembledFrom",
+        "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-demographics|1.0.0"
+      },
+      {
+        "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assembledFrom",
+        "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-address"
+      },
+      {
+        "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assembledFrom",
+        "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-contact"
+      }
+    ],
+    "item": [
+      {
+        "linkId": "intro",
+        "type": "display",
+        "text": "Welcome to the clinic."
+      },
+      {
+        "linkId": "demo-name",
+        "type": "string",
+        "text": "Name",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/variable",
+            "valueExpression": {
+              "name": "dob",
+              "language": "text/fhirpath",
+              "expression": "%resource.repeat(item).where(linkId='demo-dob').answer.value"
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+            "valueExpression": {
+              "language": "text/fhirpath",
+              "expression": "%patient.name.first().given.first()"
+            }
+          }
+        ]
+      },
+      {
+        "linkId": "demo-dob",
+        "type": "date",
+        "text": "Date of birth",
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/variable",
+            "valueExpression": {
+              "name": "dob",
+              "language": "text/fhirpath",
+              "expression": "%resource.repeat(item).where(linkId='demo-dob').answer.value"
+            }
+          }
+        ]
+      },
+      {
+        "linkId": "demo-adult",
+        "type": "boolean",
+        "text": "Aged 18 or over",
+        "readOnly": true,
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/variable",
+            "valueExpression": {
+              "name": "dob",
+              "language": "text/fhirpath",
+              "expression": "%resource.repeat(item).where(linkId='demo-dob').answer.value"
+            }
+          },
+          {
+            "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression",
+            "valueExpression": {
+              "language": "text/fhirpath",
+              "expression": "iif(%dob.exists(), %dob <= today() - 18 years, {})"
+            }
+          }
+        ]
+      },
+      {
+        "linkId": "demo-guardian",
+        "type": "string",
+        "text": "Guardian",
+        "enableWhen": [
+          {
+            "question": "demo-adult",
+            "operator": "=",
+            "answerBoolean": false
+          }
+        ],
+        "extension": [
+          {
+            "url": "http://hl7.org/fhir/StructureDefinition/variable",
+            "valueExpression": {
+              "name": "dob",
+              "language": "text/fhirpath",
+              "expression": "%resource.repeat(item).where(linkId='demo-dob').answer.value"
+            }
+          }
+        ]
+      },
+      {
+        "linkId": "visit",
+        "type": "group",
+        "text": "Your visit",
+        "item": [
+          {
+            "linkId": "reason",
+            "type": "string",
+            "text": "Reason for visit"
+          }
+        ]
+      },
+      {
+        "linkId": "phone",
+        "type": "string",
+        "text": "Phone",
+        "enableWhen": [
+          {
+            "question": "reason",
+            "operator": "exists",
+            "answerBoolean": true
+          }
+        ]
+      },
+      {
+        "linkId": "addr-street",
+        "type": "string",
+        "text": "Street",
+        "enableWhen": [
+          {
+            "question": "reason",
+            "operator": "exists",
+            "answerBoolean": true
+          }
+        ]
+      },
+      {
+        "linkId": "addr-city",
+        "type": "string",
+        "text": "City",
+        "enableWhen": [
+          {
+            "question": "reason",
+            "operator": "exists",
+            "answerBoolean": true
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -20,7 +20,11 @@ import type { AnswerValue } from './types.js';
 export type CompiledExpression = (context: unknown, env: Record<string, unknown>) => unknown[];
 
 export interface FhirPathRuntime {
-  compile(expression: string, base: string | undefined): CompiledExpression;
+  /**
+   * `raw` keeps fhirpath.js's internal types (dates, quantities) in the results. Variables use it:
+   * plain JSON values lose their FHIR type, so `%dob <= today() - 18 years` would fail.
+   */
+  compile(expression: string, base: string | undefined, raw?: boolean): CompiledExpression;
   /** Throws with a message on a syntax error. */
   parse(expression: string): void;
   /** fhirpath.js R4 model: element types (`path2Type`), repeating elements, choice types. */
@@ -55,8 +59,12 @@ export function setFhirPathLoader(load: () => Promise<FhirPathModules>) {
 
 export function loadFhirPath(): Promise<FhirPathRuntime> {
   loading ??= loader().then(({ fhirpath, r4 }) => ({
-    compile: (expression, base) => {
-      const fn = fhirpath.compile(base ? { base, expression } : expression, r4 as never);
+    compile: (expression, base, raw) => {
+      const fn = fhirpath.compile(
+        base ? { base, expression } : expression,
+        r4 as never,
+        raw ? { resolveInternalTypes: false } : {},
+      );
       return (context, env) => fn(context, env as never) as unknown[];
     },
     parse: (expression) => void fhirpath.parse(expression),
@@ -412,12 +420,12 @@ export class ExpressionEvaluator {
     };
   }
 
-  #compiled(expression: string, base: string | undefined): CompiledExpression | Error {
-    const key = `${base ?? ''}\u0000${expression}`;
+  #compiled(expression: string, base: string | undefined, raw = false): CompiledExpression | Error {
+    const key = `${raw ? 'raw' : ''}\u0000${base ?? ''}\u0000${expression}`;
     let fn = this.#cache.get(key);
     if (!fn) {
       try {
-        fn = this.#fp.compile(expression, base);
+        fn = this.#fp.compile(expression, base, raw);
       } catch (e) {
         fn = e instanceof Error ? e : new Error(String(e));
       }
@@ -426,9 +434,14 @@ export class ExpressionEvaluator {
     return fn;
   }
 
-  evaluate(expression: string, resource: QuestionnaireResponse, scope: EvalScope): EvalResult {
+  evaluate(
+    expression: string,
+    resource: QuestionnaireResponse,
+    scope: EvalScope,
+    opts: { raw?: boolean } = {},
+  ): EvalResult {
     const base = scope.context ? 'QuestionnaireResponse.item' : undefined;
-    const fn = this.#compiled(expression, base);
+    const fn = this.#compiled(expression, base, opts.raw);
     if (fn instanceof Error) return { ok: false, error: fn.message };
     let deps = this.#deps.get(expression);
     if (deps === undefined) {

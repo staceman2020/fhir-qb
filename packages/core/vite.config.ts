@@ -4,10 +4,13 @@ import { defineConfig } from 'vite';
 export default defineConfig({
   build: {
     lib: {
-      entry: resolve(import.meta.dirname, 'src/index.ts'),
+      entry: {
+        index: resolve(import.meta.dirname, 'src/index.ts'),
+        adaptive: resolve(import.meta.dirname, 'src/adaptive.ts'),
+      },
       formats: ['es'],
-      fileName: () => 'index.js',
+      fileName: (_format, name) => `${name}.js`,
     },
-    rollupOptions: { external: ['@qb/extensions'] },
+    rolldownOptions: { external: ['@qb/extensions', 'fhirpath', 'fhirpath/fhir-context/r4'] },
   },
 });

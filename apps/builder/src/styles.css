@@ -580,3 +580,13 @@ textarea.code.expr {
 .field.expression code {
   overflow-wrap: anywhere;
 }
+
+button.link {
+  border: 0;
+  background: none;
+  padding: 0;
+  color: var(--c-accent);
+  text-decoration: underline;
+  min-height: 0;
+  cursor: pointer;
+}

@@ -1,0 +1,26 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "modular-address",
+  "url": "http://example.org/fhir/qb/Questionnaire/modular-address",
+  "version": "1.0.0",
+  "status": "draft",
+  "title": "Address module",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assemble-expectation",
+      "valueCode": "assemble-child"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "street",
+      "type": "string",
+      "text": "Street"
+    },
+    {
+      "linkId": "city",
+      "type": "string",
+      "text": "City"
+    }
+  ]
+}

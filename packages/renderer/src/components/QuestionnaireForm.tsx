@@ -39,6 +39,8 @@ export interface QuestionnaireFormProps {
   onValidate?: (issues: ValidationIssue[]) => void;
   /** Terminology client; defaults to one using the browser's fetch and an in-memory cache. */
   terminologyClient?: TerminologyClient;
+  /** Adaptive mode ($next-question): "Next question" until the service completes the form. */
+  adaptive?: { done: boolean; busy: boolean; error?: string | undefined; onNext: () => void };
   ref?: Ref<QuestionnaireFormHandle>;
 }
 
@@ -240,7 +242,8 @@ export function QuestionnaireForm(props: QuestionnaireFormProps) {
           aria-label={q.title}
           onSubmit={(e) => {
             e.preventDefault();
-            if (isLast) submit();
+            if (props.adaptive && !props.adaptive.done) props.adaptive.onNext();
+            else if (isLast) submit();
             else next();
           }}
         >
@@ -270,7 +273,27 @@ export function QuestionnaireForm(props: QuestionnaireFormProps) {
               <ItemList nodes={footer} />
             </div>
           )}
-          {pages ? (
+          {props.adaptive?.error && (
+            <p className="qb-error" role="alert">
+              {props.adaptive.error}
+            </p>
+          )}
+          {props.adaptive && !props.adaptive.done ? (
+            <div className="qb-actions">
+              <button
+                type="submit"
+                className="qb-button qb-button-primary"
+                part="button"
+                disabled={props.adaptive.busy}
+                aria-describedby={props.adaptive.busy ? `${pageCountId}-busy` : undefined}
+              >
+                {strings.nextQuestion}
+              </button>
+              <span id={`${pageCountId}-busy`} role="status" className="qb-hint">
+                {props.adaptive.busy ? strings.loadingQuestion : ''}
+              </span>
+            </div>
+          ) : pages ? (
             <div className="qb-actions qb-page-nav">
               {current > 0 && (
                 <button

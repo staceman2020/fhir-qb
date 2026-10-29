@@ -1,0 +1,36 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "modular-contact",
+  "url": "http://example.org/fhir/qb/Questionnaire/modular-contact",
+  "version": "2.1.0",
+  "status": "draft",
+  "title": "Contact module",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assemble-expectation",
+      "valueCode": "assemble-root-or-child"
+    }
+  ],
+  "item": [
+    {
+      "linkId": "phone",
+      "type": "string",
+      "text": "Phone"
+    },
+    {
+      "linkId": "sub-address",
+      "type": "display",
+      "text": "Insert http://example.org/fhir/qb/Questionnaire/modular-address",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-subQuestionnaire",
+          "valueCanonical": "http://example.org/fhir/qb/Questionnaire/modular-address"
+        },
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-linkIdPrefix",
+          "valueString": "addr-"
+        }
+      ]
+    }
+  ]
+}

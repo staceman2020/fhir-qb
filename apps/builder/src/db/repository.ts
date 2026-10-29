@@ -1,10 +1,24 @@
 import type { FhirResource, Questionnaire } from 'fhir/r4';
 import {
   db as defaultDb,
+  type LaunchContextRecord,
   type QbDatabase,
   type QuestionnaireRecord,
+  type SettingRecord,
   type VersionRecord,
 } from './db.js';
+
+export const BACKUP_FORMAT = 'qb-builder-backup';
+
+export interface Backup {
+  format: typeof BACKUP_FORMAT;
+  version: 1;
+  exportedAt: string;
+  questionnaires: QuestionnaireRecord[];
+  versions: VersionRecord[];
+  launchContexts: LaunchContextRecord[];
+  settings: SettingRecord[];
+}
 
 const newId = () => crypto.randomUUID();
 
@@ -114,6 +128,65 @@ export function createRepository(db: QbDatabase = defaultDb) {
         resources,
         serverResources,
       });
+    },
+
+    /** Library lookup for sub-questionnaires: `url` or `url|version`, most recently changed first. */
+    async findByCanonical(canonical: string): Promise<Questionnaire | undefined> {
+      const [url, version] = canonical.split('|');
+      if (!url) return undefined;
+      const matches = await db.questionnaires.where('url').equals(url).toArray();
+      const hit = matches
+        .filter((r) => !version || r.questionnaire.version === version)
+        .sort((x, y) => y.updatedAt - x.updatedAt)[0];
+      return hit?.questionnaire;
+    },
+
+    // ---------------------------------------------------------------- backup (plan §9.2)
+
+    async exportBackup(now = new Date()): Promise<Backup> {
+      return {
+        format: BACKUP_FORMAT,
+        version: 1,
+        exportedAt: now.toISOString(),
+        questionnaires: await db.questionnaires.toArray(),
+        versions: await db.versions.toArray(),
+        launchContexts: await db.launchContexts.toArray(),
+        settings: await db.settings.toArray(),
+      };
+    },
+
+    /** Restores a backup, replacing records with the same ids. Returns how many forms were restored. */
+    async importBackup(data: unknown): Promise<{ forms: number; versions: number }> {
+      const b = data as Partial<Backup>;
+      if (b?.format !== BACKUP_FORMAT || b.version !== 1 || !Array.isArray(b.questionnaires))
+        throw new Error('This file is not a qb builder backup.');
+      if (
+        b.questionnaires.some(
+          (r) => typeof r?.id !== 'string' || r.questionnaire?.resourceType !== 'Questionnaire',
+        )
+      )
+        throw new Error('The backup contains an invalid form record.');
+      await db.transaction(
+        'rw',
+        [db.questionnaires, db.versions, db.launchContexts, db.settings],
+        async () => {
+          await db.questionnaires.bulkPut(b.questionnaires!);
+          // Versions get new sequence numbers so they never overwrite other forms' history.
+          await db.versions.bulkAdd((b.versions ?? []).map(({ seq: _s, ...v }) => v));
+          await db.launchContexts.bulkPut(b.launchContexts ?? []);
+          await db.settings.bulkPut(b.settings ?? []);
+        },
+      );
+      return { forms: b.questionnaires.length, versions: b.versions?.length ?? 0 };
+    },
+
+    /** Frees space by clearing the terminology cache when storage is at least 80% full (plan §9.4). */
+    async pruneIfNearlyFull(
+      estimate: { usage?: number; quota?: number } | undefined,
+    ): Promise<boolean> {
+      if (!estimate?.quota || (estimate.usage ?? 0) / estimate.quota < 0.8) return false;
+      await db.valueSetCache.clear();
+      return true;
     },
 
     // ---------------------------------------------------------------- settings

@@ -1,0 +1,86 @@
+{
+  "resourceType": "Questionnaire",
+  "id": "modular-demographics",
+  "url": "http://example.org/fhir/qb/Questionnaire/modular-demographics",
+  "version": "1.0.0",
+  "status": "draft",
+  "title": "Demographics module",
+  "extension": [
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-assemble-expectation",
+      "valueCode": "assemble-child"
+    },
+    {
+      "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-launchContext",
+      "extension": [
+        {
+          "url": "name",
+          "valueCoding": {
+            "system": "http://hl7.org/fhir/uv/sdc/CodeSystem/launchContext",
+            "code": "patient"
+          }
+        },
+        {
+          "url": "type",
+          "valueCode": "Patient"
+        }
+      ]
+    },
+    {
+      "url": "http://hl7.org/fhir/StructureDefinition/variable",
+      "valueExpression": {
+        "name": "dob",
+        "language": "text/fhirpath",
+        "expression": "%resource.repeat(item).where(linkId='dob').answer.value"
+      }
+    }
+  ],
+  "item": [
+    {
+      "linkId": "name",
+      "type": "string",
+      "text": "Name",
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-initialExpression",
+          "valueExpression": {
+            "language": "text/fhirpath",
+            "expression": "%patient.name.first().given.first()"
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "dob",
+      "type": "date",
+      "text": "Date of birth"
+    },
+    {
+      "linkId": "adult",
+      "type": "boolean",
+      "text": "Aged 18 or over",
+      "readOnly": true,
+      "extension": [
+        {
+          "url": "http://hl7.org/fhir/uv/sdc/StructureDefinition/sdc-questionnaire-calculatedExpression",
+          "valueExpression": {
+            "language": "text/fhirpath",
+            "expression": "iif(%dob.exists(), %dob <= today() - 18 years, {})"
+          }
+        }
+      ]
+    },
+    {
+      "linkId": "guardian",
+      "type": "string",
+      "text": "Guardian",
+      "enableWhen": [
+        {
+          "question": "adult",
+          "operator": "=",
+          "answerBoolean": false
+        }
+      ]
+    }
+  ]
+}

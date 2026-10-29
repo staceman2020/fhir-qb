@@ -49,6 +49,8 @@ export const DEFAULT_STRINGS = {
   problems: (n: number) => `${n} ${n === 1 ? 'problem' : 'problems'}`,
   opensInNewTab: '(opens in a new tab)',
   aboutLabel: (label: string) => `about ${label}`,
+  nextQuestion: 'Next question',
+  loadingQuestion: 'Loading the next question…',
 };
 export type Strings = typeof DEFAULT_STRINGS;
 

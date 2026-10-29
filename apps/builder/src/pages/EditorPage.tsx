@@ -12,6 +12,7 @@ import { TreePane } from '../editor/TreePane.js';
 import { EditorPane } from '../editor/EditorPane.js';
 import { PreviewPane } from '../editor/PreviewPane.js';
 import { useSyncExternalStore } from 'react';
+import { assembleQuestionnaire, usesSubQuestionnaires } from '@qb/core';
 import { hrefFor } from '../router.js';
 
 const STATUS_TEXT: Record<SaveStatus, string> = {
@@ -52,6 +53,7 @@ export function EditorPage({ id }: { id: string }) {
 }
 
 function Editor({ store, id, status }: { store: EditorStore; id: string; status: SaveStatus }) {
+  const repo = useRepo();
   const actions = useMemo(() => createActions(store), [store]);
   const preview = useMemo(() => createPreviewBridge(), []);
   const state = useSyncExternalStore(store.subscribe, store.getState);
@@ -107,6 +109,30 @@ function Editor({ store, id, status }: { store: EditorStore; id: string; status:
             <button type="button" onClick={() => download(fileNameFor(q), exportJson(q))}>
               Export JSON
             </button>
+            {usesSubQuestionnaires(q) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const r = await assembleQuestionnaire(q, {
+                    resolveCanonical: (c) => repo.findByCanonical(c),
+                  });
+                  const errors = r.issues.filter((i) => i.severity === 'error');
+                  if (errors.length) {
+                    setAnnouncement(
+                      `Could not assemble: ${errors.map((e) => e.message).join(' ')}`,
+                    );
+                    window.alert(
+                      `The form could not be assembled:\n\n${errors.map((e) => `• ${e.message}`).join('\n')}`,
+                    );
+                    return;
+                  }
+                  download(fileNameFor(q, '-assembled'), exportJson(r.questionnaire));
+                  setAnnouncement('Assembled form exported');
+                }}
+              >
+                Export assembled
+              </button>
+            )}
             <button
               type="button"
               onClick={() =>

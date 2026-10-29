@@ -4,6 +4,7 @@ import type { Bundle, FhirResource, Questionnaire, QuestionnaireResponse } from 
 import {
   LruCache,
   resolveTerminologyServer,
+  responseBaseFromContext,
   TerminologyClient,
   createFormEngine,
   type FetchLike,
@@ -96,7 +97,81 @@ export class QbQuestionnaireElement extends HTMLElement {
     this.#fhirClient = v;
     if (this.#questionnaire) void this.#build(false);
   }
-  resolveCanonical: ((url: string) => Promise<FhirResource | undefined>) | undefined;
+  #resolveCanonical: ((url: string) => Promise<FhirResource | undefined>) | undefined;
+  #adaptive:
+    | { session: import('@qb/core/adaptive').AdaptiveSession; busy: boolean; error?: string }
+    | undefined;
+
+  /** Loads sub-questionnaires of modular forms (plan §6.7). Setting it rebuilds the form. */
+  get resolveCanonical(): ((url: string) => Promise<FhirResource | undefined>) | undefined {
+    return this.#resolveCanonical;
+  }
+  set resolveCanonical(fn: ((url: string) => Promise<FhirResource | undefined>) | undefined) {
+    this.#resolveCanonical = fn;
+    if (this.#questionnaire) void this.#build(false);
+  }
+
+  /**
+   * Adaptive mode (SDC $next-question): asks the service behind `fhirClient` for the adaptive
+   * Questionnaire `canonical`, one question at a time, until it completes the form.
+   */
+  async startAdaptive(canonical: string): Promise<void> {
+    if (!this.fhirClient) throw new Error('startAdaptive needs a fhirClient');
+    // Lazy: the adaptive client only loads for adaptive forms (bundle budget, plan §11.4).
+    const { AdaptiveSession } = await import('@qb/core/adaptive');
+    const session = new AdaptiveSession(
+      this.fhirClient,
+      canonical,
+      responseBaseFromContext(this.launchContext),
+    );
+    this.#adaptive = { session, busy: true };
+    try {
+      await session.next();
+      this.#adaptive.busy = false;
+      this.#questionnaire = session.questionnaire;
+      this.#response = session.response;
+      await this.#build(false);
+    } catch (error) {
+      this.#adaptive = { session, busy: false, error: (error as Error).message };
+      this.#render();
+      this.#emit('qb-error', { error });
+    }
+  }
+
+  async #adaptiveNext() {
+    const a = this.#adaptive;
+    const engine = this.#engine;
+    if (!a || !engine || a.busy) return;
+    if (engine.collectIssues().some((i) => i.severity === 'error')) {
+      this.validate();
+      return;
+    }
+    a.busy = true;
+    delete a.error;
+    this.#render();
+    try {
+      await a.session.next(engine.getResponse());
+      a.busy = false;
+      const added = a.session.questionnaire.item?.at(-1)?.linkId;
+      this.#questionnaire = a.session.questionnaire;
+      this.#response = a.session.response;
+      await this.#build(false);
+      // Move focus to the new question so keyboard and screen reader users continue from it.
+      if (added && !a.session.done)
+        requestAnimationFrame(() =>
+          this.#shadow
+            .querySelector<HTMLElement>(
+              `[data-linkid="${CSS.escape(added)}"] :is(input, select, textarea)`,
+            )
+            ?.focus(),
+        );
+    } catch (error) {
+      a.busy = false;
+      a.error = (error as Error).message;
+      this.#render();
+      this.#emit('qb-error', { error });
+    }
+  }
   #terminologyFetch: typeof fetch | undefined;
   #terminologyClient: TerminologyClient | undefined;
   /** One in-memory cache per element, kept across rebuilds (plan §6.9). */
@@ -143,6 +218,8 @@ export class QbQuestionnaireElement extends HTMLElement {
   }
   set questionnaire(q: Questionnaire | undefined) {
     this.#questionnaire = q;
+    // Setting a questionnaire directly leaves adaptive mode.
+    this.#adaptive = undefined;
     void this.#build(false);
   }
 
@@ -261,7 +338,7 @@ export class QbQuestionnaireElement extends HTMLElement {
         ...(response ? { response } : {}),
         ...(this.launchContext ? { launchContext: this.launchContext } : {}),
         ...(this.fhirClient ? { fhirClient: this.fhirClient } : {}),
-        ...(this.resolveCanonical ? { resolveCanonical: this.resolveCanonical } : {}),
+        ...(this.#resolveCanonical ? { resolveCanonical: this.#resolveCanonical } : {}),
         ...(this.lang ? { locale: this.lang } : {}),
         terminology,
       });
@@ -322,6 +399,16 @@ export class QbQuestionnaireElement extends HTMLElement {
         hideSubmit={this.hasAttribute('hide-submit')}
         hideTitle={this.hasAttribute('hide-title')}
         {...(this.#client() ? { terminologyClient: this.#client()! } : {})}
+        {...(this.#adaptive
+          ? {
+              adaptive: {
+                done: this.#adaptive.session.done,
+                busy: this.#adaptive.busy,
+                error: this.#adaptive.error,
+                onNext: () => void this.#adaptiveNext(),
+              },
+            }
+          : {})}
         {...(this.lang ? { lang: this.lang } : {})}
         onValidate={(issues) => this.#emit('qb-validate', { issues })}
         onSubmit={(response) => this.#emit('qb-submit', { response })}

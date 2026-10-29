@@ -5,7 +5,7 @@ import { TerminologyClient, type FetchLike } from '@qb/core';
 import { STD_EXT, getExtension } from '@qb/extensions';
 import '@qb/renderer/define';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { fixtures, populationData } from '@qb/test-fixtures';
+import { fixtures, modular, populationData } from '@qb/test-fixtures';
 import { App } from './App.js';
 import { RepoContext } from './context.js';
 import { QbDatabase } from './db/db.js';
@@ -415,6 +415,95 @@ describe('Population and extraction in the builder', () => {
     expect(getExtension(q, STD_EXT.launchContext)?.extension?.[0]?.valueCoding?.code).toBe(
       'patient',
     );
+  });
+});
+
+describe('Phase 7 in the builder', () => {
+  it('compares a saved version with the current form', async () => {
+    const { user } = await open(scored());
+    const previewTabs = screen.getByRole('tablist', { name: 'Preview' });
+    await user.click(within(previewTabs).getByRole('tab', { name: 'History' }));
+    await user.type(screen.getByRole('textbox', { name: 'Version label' }), 'Before');
+    await user.click(screen.getByRole('button', { name: 'Save version' }));
+    await screen.findByRole('cell', { name: 'Before' });
+    await user.click(
+      within(screen.getByRole('tree')).getByRole('treeitem', { name: /Question 1/ }),
+    );
+    const text = screen.getByRole('textbox', { name: 'Question' });
+    await user.clear(text);
+    await user.type(text, 'How often?');
+    await user.click(screen.getByRole('button', { name: 'Compare with current Before' }));
+    const region = screen.getByRole('region', { name: 'Changes since “Before”' });
+    expect(within(region).getByRole('heading', { name: 'Changed (1)' })).toBeTruthy();
+    expect(within(region).getByRole('row', { name: 'Text Question 1 How often?' })).toBeTruthy();
+    await user.click(within(region).getByRole('button', { name: 'Close comparison' }));
+    expect(screen.queryByRole('region', { name: /Changes since/ })).toBeNull();
+  });
+
+  it('includes a library form, previews it assembled and exports the assembled form', async () => {
+    for (const lib of modular.library()) await repo.create(lib);
+    const { user } = await open(modular.root());
+    expect(
+      (screen.getByRole('combobox', { name: 'How this form can be used' }) as HTMLSelectElement)
+        .value,
+    ).toBe('assemble-root');
+    const root = await previewRoot();
+    // Modules come from the library; the contact module is conditional, so check the demographics one.
+    await waitFor(() => expect(within(root).getByLabelText('Date of birth')).toBeTruthy());
+    await user.click(
+      within(screen.getByRole('tree')).getByRole('treeitem', { name: /Insert http.*demographics/ }),
+    );
+    await user.click(
+      within(screen.getByRole('tablist', { name: 'Item settings' })).getByRole('tab', {
+        name: 'Advanced',
+      }),
+    );
+    const select = screen.getByRole('combobox', {
+      name: 'Insert another form here',
+    }) as HTMLSelectElement;
+    expect(select.value).toBe(
+      'http://example.org/fhir/qb/Questionnaire/modular-demographics|1.0.0',
+    );
+    expect((screen.getByRole('textbox', { name: 'linkId prefix' }) as HTMLInputElement).value).toBe(
+      'demo-',
+    );
+    const saved: { name: string; text: string }[] = [];
+    const created = vi.spyOn(URL, 'createObjectURL').mockImplementation((b) => {
+      void (b as Blob).text().then((text) => saved.push({ name: 'x', text }));
+      return 'blob:x';
+    });
+    await user.click(screen.getByRole('button', { name: 'Export assembled' }));
+    await waitFor(() => expect(saved).toHaveLength(1));
+    expect(JSON.parse(saved[0]!.text)).toEqual(modular.assembled());
+    created.mockRestore();
+  });
+
+  it('downloads and restores a backup from Settings', async () => {
+    const id = await repo.create(fixtures.repeats());
+    window.location.hash = '#/settings';
+    const user = userEvent.setup();
+    render(
+      <RepoContext value={repo}>
+        <App />
+      </RepoContext>,
+    );
+    const texts: string[] = [];
+    const spy = vi.spyOn(URL, 'createObjectURL').mockImplementation((b) => {
+      void (b as Blob).text().then((t) => texts.push(t));
+      return 'blob:x';
+    });
+    await user.click(await screen.findByRole('button', { name: 'Download backup' }));
+    expect(await screen.findByText('Backup downloaded: 1 form.')).toBeTruthy();
+    await waitFor(() => expect(texts).toHaveLength(1));
+    spy.mockRestore();
+    await repo.remove(id);
+    vi.spyOn(window, 'confirm').mockReturnValue(true);
+    await user.upload(
+      screen.getByLabelText('Restore from a backup file'),
+      new File([texts[0]!], 'backup.json', { type: 'application/json' }),
+    );
+    expect(await screen.findByText('Restored 1 form and 0 saved versions.')).toBeTruthy();
+    expect((await repo.get(id))?.title).toBe('Household members');
   });
 });
 
